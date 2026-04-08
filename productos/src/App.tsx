@@ -5,6 +5,7 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { PrivateRoute } from "@/components/layout/private-route";
 import { LoginPage } from "@/pages/login";
 import { DashboardPage } from "@/pages/dashboard";
+import { MetricDetailPage } from "@/pages/metric-detail";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,6 +34,10 @@ function AppRoutes() {
         <Route
           path="dashboard"
           element={<DashboardPage />}
+        />
+        <Route
+          path="dashboard/metrics/:id"
+          element={<MetricDetailPage />}
         />
         <Route
           path="okrs"
