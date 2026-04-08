@@ -7,7 +7,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const url = new URL(req.url);
-    const periodDays = parseInt(url.searchParams.get("period_days") ?? "90", 10);
+    const periodDays = Math.max(1, parseInt(url.searchParams.get("period_days") ?? "90", 10) || 90);
     const granularity = url.searchParams.get("granularity") === "week" ? "WEEK" : "MONTH";
 
     const sql = `
