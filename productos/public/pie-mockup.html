@@ -797,6 +797,79 @@
       30% { transform: translateY(-4px); }
     }
 
+    /* ===== API KEY INPUT ===== */
+    .api-key-input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      font-size: 11px;
+      outline: none;
+      width: 170px;
+      transition: border-color 0.2s;
+    }
+    .api-key-input:focus { border-color: var(--primary); }
+    .api-key-input::placeholder { color: var(--border); }
+
+    /* ===== PIE ANALISE CARD (dashboard reativo) ===== */
+    .pie-analise {
+      background: linear-gradient(135deg, var(--card), rgba(0, 158, 251, 0.06));
+      border: 1px solid rgba(0, 158, 251, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      animation: fadeIn 0.4s ease;
+    }
+    .pie-analise-header {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pie-live {
+      background: var(--primary);
+      color: white;
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      animation: pulse 2s infinite;
+    }
+    .pie-analise-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .pie-analise-item {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 8px;
+      padding: 12px;
+      border-left: 3px solid var(--border);
+    }
+    .pie-analise-item.danger  { border-color: var(--danger); }
+    .pie-analise-item.warning { border-color: var(--warning); }
+    .pie-analise-item.success { border-color: var(--success); }
+    .pie-analise-item.info    { border-color: var(--primary); }
+    .pie-analise-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+    .pie-analise-valor { font-size: 17px; font-weight: 700; }
+    .pie-analise-item.danger  .pie-analise-valor { color: var(--danger); }
+    .pie-analise-item.warning .pie-analise-valor { color: var(--warning); }
+    .pie-analise-item.success .pie-analise-valor { color: var(--success); }
+    .pie-analise-item.info    .pie-analise-valor { color: var(--primary); }
+    .pie-analise-acao {
+      font-size: 12px;
+      color: var(--primary);
+      background: rgba(0, 158, 251, 0.08);
+      border-radius: 6px;
+      padding: 6px 10px;
+    }
+
     /* ===== SCROLLBAR ===== */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -826,6 +899,7 @@
     </div>
     <div class="header-right">
       <div class="company-badge">Onfly Viagens</div>
+      <input type="password" id="apiKeyInput" class="api-key-input" placeholder="API Key (opcional)" title="Anthropic API Key — sem ela usa fallback demo">
       <div class="avatar">RC</div>
     </div>
   </header>
@@ -1022,6 +1096,9 @@
       </div>
     </div>
 
+    <!-- PIE Analise Reativa -->
+    <div id="pie-analise" class="pie-analise" style="display:none"></div>
+
     <!-- Ranking Tables -->
     <div class="ranking-section">
       <div class="mini-table">
@@ -1083,26 +1160,83 @@
   </main>
 </div>
 
+<script src="js/assembleContexto.js"></script>
+<script src="js/chamaClaude.js"></script>
 <script>
-  // Simulator logic
+  // ===== CONTEXTO FAKE — substitui dados reais do BigQuery =====
+  const CONTEXTO_FAKE = {
+    empresa: "Onfly Viagens",
+    periodo: "ultimos 30 dias",
+    data_extracao: new Date().toISOString().split('T')[0],
+    resumo_infracoes: {
+      total: 47,
+      variacao_mes_anterior_pct: 18,
+      por_centro_custo: [
+        { cc: "Comercial", total: 12, custo_excedente: 8400 },
+        { cc: "Engenharia", total: 9, custo_excedente: 5200 },
+        { cc: "Marketing", total: 8, custo_excedente: 3800 },
+        { cc: "Financeiro", total: 6, custo_excedente: 2100 },
+        { cc: "RH", total: 5, custo_excedente: 1800 }
+      ],
+      por_tipo: [
+        { tipo: "Hotel acima do limite", total: 28 },
+        { tipo: "Antecedencia < 3 dias", total: 11 },
+        { tipo: "Classe errada (aereo)", total: 8 }
+      ]
+    },
+    aprovacoes: {
+      tempo_medio_horas: 5.2,
+      por_aprovador: [
+        { nome: "Ricardo Almeida", tempo_medio_horas: 14.5, pendentes: 23, custo_atraso: 4200 },
+        { nome: "Fernanda Costa", tempo_medio_horas: 9.8, pendentes: 8, custo_atraso: 2100 },
+        { nome: "Bruno Oliveira", tempo_medio_horas: 1.4, pendentes: 2, custo_atraso: 0 }
+      ]
+    },
+    score_aderencia: {
+      media_empresa_pct: 72,
+      por_viajante: [
+        { nome: "Lucia Ferreira", score: 96, viagens: 14, infracoes: 0 },
+        { nome: "Marcos Lima", score: 91, viagens: 8, infracoes: 1 },
+        { nome: "Beatriz Santos", score: 74, viagens: 11, infracoes: 3 },
+        { nome: "Carlos Silva", score: 42, viagens: 12, infracoes: 8 }
+      ]
+    },
+    simulador_base: {
+      limite_atual_hotel: 350,
+      total_reservas_90d: 4668,
+      distribuicao_diarias: [
+        { faixa: "ate_200", qtd: 526, media: 123 },
+        { faixa: "200_300", qtd: 2313, media: 257 },
+        { faixa: "300_400", qtd: 1823, media: 343 },
+        { faixa: "400_500", qtd: 1059, media: 453 },
+        { faixa: "500_700", qtd: 1727, media: 598 }
+      ]
+    },
+    auto_aprovacao: {
+      padroes: [{
+        descricao: "Hospedagem domestica < R$350, ate 2 noites",
+        ocorrencias: 87,
+        taxa_aprovacao_pct: 100,
+        tempo_medio_horas: 0.8,
+        economia_horas_mes: 14
+      }]
+    }
+  };
+
+  // ===== SIMULATOR =====
   function updateSimulator(val) {
     const value = parseInt(val);
     const range = document.getElementById('policySlider');
     const pct = ((value - 200) / 600) * 100;
     range.style.setProperty('--val', pct + '%');
-
     document.getElementById('sliderValue').textContent = 'R$ ' + value;
-
-    // Simulate impact based on slider value
     const baseReservas = 47;
     const ratio = (400 - value) / 400;
     const reservas = Math.max(0, Math.round(baseReservas * Math.abs(ratio) * 1.2));
     const economia = Math.abs(ratio) * 28000;
     const infracoes = value >= 400 ? Math.round((value - 400) / 25 * 2) : -Math.round((400 - value) / 25 * 2);
-
     document.getElementById('simReservas').textContent = reservas;
     document.getElementById('simEconomia').textContent = 'R$ ' + (economia / 1000).toFixed(1) + 'k';
-
     const infraEl = document.getElementById('simInfracoes');
     if (value > 400) {
       infraEl.textContent = '-' + Math.abs(infracoes);
@@ -1115,115 +1249,127 @@
       infraEl.className = 'sim-value info';
     }
   }
-
-  // Initialize slider visual
   updateSimulator(400);
 
-  // Chat conversations
-  const conversations = {
-    infracoes: [
-      { role: 'user', text: 'Quantas infracoes de politica tivemos este mes?' },
-      { role: 'ai', text: 'Este mes voces tiveram <strong>47 infracoes</strong> de politica de viagem. O centro de custo <strong>Comercial</strong> lidera com 12 ocorrencias, seguido por Engenharia (9) e Marketing (8).', data: [
-        { label: 'Total de infracoes', value: '47', cls: 'danger' },
-        { label: 'Maior infrator (CC)', value: 'Comercial (12)', cls: 'warning' },
-        { label: 'Custo excedente total', value: 'R$ 23.400', cls: 'danger' },
-        { label: 'vs. mes anterior', value: '+18%', cls: 'danger' },
-      ]},
-      { role: 'ai', text: 'O principal tipo de infracao e <strong>hotel acima do limite</strong> (28 casos). Quer que eu simule o impacto de ajustar o limite de R$ 350 para R$ 400?' }
-    ],
-    aprovacoes: [
-      { role: 'user', text: 'Quais aprovacoes estao demorando mais?' },
-      { role: 'ai', text: 'O tempo medio de aprovacao esta em <strong>2.3 dias</strong>, mas alguns gestores estao muito acima disso:', data: [
-        { label: 'Ricardo Almeida', value: '4.8 dias', cls: 'danger' },
-        { label: 'Fernanda Costa', value: '3.2 dias', cls: 'warning' },
-        { label: 'Bruno Oliveira', value: '1.1 dias', cls: 'success' },
-        { label: 'Custo do atraso (mes)', value: 'R$ 8.700', cls: 'danger' },
-      ]},
-      { role: 'ai', text: 'Ricardo Almeida tem <strong>23 aprovacoes pendentes</strong> ha mais de 3 dias. O custo estimado desse atraso e R$ 4.200 em tarifas que subiram enquanto aguardavam aprovacao.' }
-    ],
-    simular: [
-      { role: 'user', text: 'Simular: e se aumentarmos o limite de hotel para R$ 500?' },
-      { role: 'ai', text: 'Simulacao completa! Se o limite de hotel subir de R$ 350 para R$ 500:', data: [
-        { label: 'Infracoes eliminadas', value: '-32 (68%)', cls: 'success' },
-        { label: 'Custo adicional estimado', value: 'R$ 18.400/mes', cls: 'warning' },
-        { label: 'Tempo de aprovacao', value: '-1.4 dias', cls: 'success' },
-        { label: 'Satisfacao viajante', value: '+22 pts NPS', cls: 'success' },
-      ]},
-      { role: 'ai', text: 'O custo adicional de R$ 18.4k e compensado pela economia de R$ 8.7k em tarifas que subiam durante aprovacao + R$ 6.2k em horas de gestores. <strong>Saldo: +R$ 3.5k negativo, mas com ganho de satisfacao.</strong>' }
-    ],
-    ranking: [
-      { role: 'user', text: 'Qual o ranking de aderencia dos viajantes?' },
-      { role: 'ai', text: 'Aqui esta o ranking de aderencia a politica dos ultimos 30 dias:', data: [
-        { label: 'Aderencia media', value: '72%', cls: 'warning' },
-        { label: 'Melhor viajante', value: 'Lucia Ferreira (96%)', cls: 'success' },
-        { label: 'Pior viajante', value: 'Carlos Silva (42%)', cls: 'danger' },
-        { label: 'Viajantes acima de 85%', value: '34 de 89', cls: 'success' },
-      ]},
-      { role: 'ai', text: 'Carlos Silva tem score de <strong>42%</strong> por conta de 8 infracoes em hotel e 3 em transporte. Ele e do time Comercial, que lidera as infracoes. Quer que eu sugira uma abordagem?' }
-    ]
+  // ===== CHAT HELPERS =====
+  function getApiKey() {
+    const input = document.getElementById('apiKeyInput');
+    return input?.value?.trim() || sessionStorage.getItem('pie_api_key') || null;
+  }
+
+  function adicionarMensagem(role, texto, dados) {
+    const container = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = 'message ' + role;
+    let html = `<div class="message-label">${role === 'user' ? 'Voce' : 'Policy Intelligence'}</div>`;
+    html += `<div class="message-bubble">${texto}`;
+    if (dados && dados.length) {
+      html += '<div class="ai-data">';
+      dados.forEach(d => {
+        html += `<div class="ai-data-row"><span class="label">${d.label}</span><span class="value ${d.tipo}">${d.valor}</span></div>`;
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+    div.innerHTML = html;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return div;
+  }
+
+  function mostrarTyping() {
+    const container = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = 'message ai';
+    div.innerHTML = '<div class="message-label">Policy Intelligence</div><div class="message-bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return div;
+  }
+
+  function atualizarDashboard(dados, acao) {
+    const card = document.getElementById('pie-analise');
+    if (!card || !dados?.length) return;
+    const items = dados.map(d => `
+      <div class="pie-analise-item ${d.tipo}">
+        <div class="pie-analise-label">${d.label}</div>
+        <div class="pie-analise-valor">${d.valor}</div>
+      </div>`).join('');
+    const acaoHtml = acao ? `<div class="pie-analise-acao">Proxima acao sugerida: <strong>${acao.replace(/_/g, ' ')}</strong></div>` : '';
+    card.innerHTML = `
+      <div class="pie-analise-header">&#128200; Analise PIE <span class="pie-live">ao vivo</span></div>
+      <div class="pie-analise-grid">${items}</div>
+      ${acaoHtml}`;
+    card.style.display = 'block';
+  }
+
+  // ===== CORE: ENVIA PRO CLAUDE =====
+  // Contexto atual — começa com fake, substituído por dados reais no load
+  let _contextoAtual = CONTEXTO_FAKE;
+  let _fonteDados = 'demo';
+
+  let enviando = false;
+  async function enviarParaClaude(pergunta, ehProativo) {
+    if (enviando) return;
+    enviando = true;
+
+    if (!ehProativo) adicionarMensagem('user', pergunta);
+    const typingEl = mostrarTyping();
+
+    const apiKey = getApiKey();
+    if (apiKey) sessionStorage.setItem('pie_api_key', apiKey);
+
+    const resultado = await chamaClaude(pergunta, _contextoAtual, apiKey);
+    typingEl.remove();
+    adicionarMensagem('ai', resultado.resposta, resultado.dados);
+    atualizarDashboard(resultado.dados, resultado.acao);
+
+    enviando = false;
+    return resultado;
+  }
+
+  // ===== CHIPS =====
+  const CHIPS_PERGUNTAS = {
+    infracoes: 'Quais foram as infracoes de politica este mes? Detalhe por centro de custo e custo excedente.',
+    aprovacoes: 'Como estao as aprovacoes? Quais aprovadores estao com tempo critico?',
+    simular: 'Simula o impacto de aumentar o limite de hotel de R$ 350 para R$ 500.',
+    ranking: 'Qual o ranking de aderencia dos viajantes? Destaque o pior e o melhor.'
   };
 
   function showConversation(key) {
-    // Update active chip
     document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
     event.target.classList.add('active');
-
-    const msgs = conversations[key];
-    const container = document.getElementById('chatMessages');
-    container.innerHTML = '';
-
-    msgs.forEach((msg, i) => {
-      setTimeout(() => {
-        const div = document.createElement('div');
-        div.className = 'message ' + msg.role;
-
-        let html = '<div class="message-label">' + (msg.role === 'user' ? 'Voce' : 'Policy Intelligence') + '</div>';
-        html += '<div class="message-bubble">' + msg.text;
-
-        if (msg.data) {
-          html += '<div class="ai-data">';
-          msg.data.forEach(d => {
-            html += '<div class="ai-data-row"><span class="label">' + d.label + '</span><span class="value ' + d.cls + '">' + d.value + '</span></div>';
-          });
-          html += '</div>';
-        }
-
-        html += '</div>';
-        div.innerHTML = html;
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
-      }, i * 400);
-    });
+    document.getElementById('chatMessages').innerHTML = '';
+    enviarParaClaude(CHIPS_PERGUNTAS[key]);
   }
 
   function sendMessage() {
     const input = document.getElementById('chatInput');
     const text = input.value.trim();
     if (!text) return;
-
-    const container = document.getElementById('chatMessages');
-
-    // Add user message
-    const userMsg = document.createElement('div');
-    userMsg.className = 'message user';
-    userMsg.innerHTML = '<div class="message-label">Voce</div><div class="message-bubble">' + text + '</div>';
-    container.appendChild(userMsg);
-
     input.value = '';
-
-    // Add typing indicator
-    const typing = document.createElement('div');
-    typing.className = 'message ai';
-    typing.innerHTML = '<div class="message-label">Policy Intelligence</div><div class="message-bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
-    container.appendChild(typing);
-    container.scrollTop = container.scrollHeight;
-
-    // Simulate AI response
-    setTimeout(() => {
-      typing.innerHTML = '<div class="message-label">Policy Intelligence</div><div class="message-bubble">Analisando os dados de viagem da Onfly para responder sua pergunta... <br><br>Essa funcionalidade esta em desenvolvimento para o hackathon. No produto final, eu consultaria o BigQuery em tempo real e traria a resposta com dados estruturados.</div>';
-      container.scrollTop = container.scrollHeight;
-    }, 1500);
+    enviarParaClaude(text);
   }
+
+  // ===== LOAD: CONTEXTO REAL + MENSAGEM PROATIVA =====
+  window.addEventListener('load', async () => {
+    document.getElementById('chatMessages').innerHTML = '';
+
+    // Tenta buscar dados reais dos endpoints
+    const contextoReal = await assembleContexto();
+    if (contextoReal) {
+      _contextoAtual = contextoReal;
+      _fonteDados = 'real';
+      // Atualiza badge de fonte no header
+      const badge = document.querySelector('.company-badge');
+      if (badge) badge.textContent = 'Onfly · dados reais';
+    } else {
+      _fonteDados = 'demo';
+    }
+
+    const pergunta = 'Analise os dados e me diga qual e o alerta mais critico agora. Comece diretamente com o dado principal, sem saudacao, como se fosse a primeira mensagem do dia pro gestor.';
+    setTimeout(() => enviarParaClaude(pergunta, true), 300);
+  });
 </script>
 
 </body>
