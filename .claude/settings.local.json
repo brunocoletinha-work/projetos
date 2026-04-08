@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@latest add button card input label select textarea dialog dropdown-menu tabs toast skeleton badge separator sheet avatar tooltip)",
+      "Bash(npx shadcn@latest add button card input label select textarea dialog dropdown-menu tabs sonner skeleton badge separator sheet avatar tooltip)",
+      "Bash(npm run:*)",
+      "Bash(npx vitest:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(git add:*)",
+      "Bash(mkdir -p ~/.claude/skills)",
+      "Bash(git clone:*)",
+      "Bash(git commit:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx shadcn@latest add alert-dialog --yes)"
+    ]
+  }
+}
