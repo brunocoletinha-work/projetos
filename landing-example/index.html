@@ -146,7 +146,7 @@
     .steps__card-text { font-size:0.9rem; color:var(--text-muted); line-height:1.55; }
 
     @media (min-width:900px) {
-      .steps__grid { position:relative; }
+      .steps__grid { grid-template-columns:repeat(3,1fr); position:relative; }
       .steps__grid::before,.steps__grid::after { content:''; position:absolute; top:50%; height:1px; background:repeating-linear-gradient(90deg,var(--primary) 0,var(--primary) 5px,transparent 5px,transparent 10px); opacity:0.2; }
       .steps__grid::before { left:calc(33.33% + 12px); width:calc(33.33% - 24px); }
       .steps__grid::after  { left:calc(66.66% + 12px); width:calc(33.33% - 24px); }
