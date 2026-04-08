@@ -13,11 +13,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 // ── Endpoints internos ───────────────────────────────────────────────────────
 const BASE = 'https://utzfepfmufrszdngrrsn.supabase.co/functions/v1';
-const ENDPOINTS = {
-  infracoes:    `${BASE}/infracoes-por-tempo?period_days=90`,
-  aprovacao:    `${BASE}/tempo-aprovacao-gestor?period_days=30`,
-  autoAprov:    `${BASE}/auto-aprovacao-sugestao?period_days=90&min_pct=80`,
-};
+const DEMO_COMPANY_ID = 3005;
 
 // ── System Prompt v2 ─────────────────────────────────────────────────────────
 const SYSTEM_PROMPT = `Voce e o Policy Intelligence Engine — o assistente de politica de viagens da Onfly.
@@ -71,77 +67,86 @@ Regras:
 {CONTEXTO_DADOS}
 </contexto_dados>`;
 
-// ── Monta contexto a partir dos 3 endpoints ──────────────────────────────────
-async function assembleContexto() {
-  const [infRes, apRes, autoRes] = await Promise.all([
-    fetch(ENDPOINTS.infracoes).then(r => r.json()),
-    fetch(ENDPOINTS.aprovacao).then(r => r.json()),
-    fetch(ENDPOINTS.autoAprov).then(r => r.json()),
+// ── Monta contexto a partir dos endpoints por empresa ────────────────────────
+async function assembleContexto(companyId: number) {
+  const [infRes, apRes, adrRes, simRes, infTempoRes] = await Promise.all([
+    fetch(`${BASE}/infracoes?company_id=${companyId}`).then(r => r.json()),
+    fetch(`${BASE}/aprovacoes?company_id=${companyId}`).then(r => r.json()),
+    fetch(`${BASE}/aderencia?company_id=${companyId}`).then(r => r.json()),
+    fetch(`${BASE}/simulador?company_id=${companyId}&limite=350`).then(r => r.json()),
+    fetch(`${BASE}/infracoes-por-tempo?period_days=90`).then(r => r.json()),
   ]);
 
-  // infracoes-por-tempo
-  const inf = (infRes.data ?? []).sort((a: any, b: any) => b.period.localeCompare(a.period));
-  const mesAtual   = inf[0] ?? {};
-  const mesAnterior = inf[1] ?? {};
-  const variacaoPct = mesAnterior.total_infracoes
-    ? Math.round(((mesAtual.total_infracoes - mesAnterior.total_infracoes) / mesAnterior.total_infracoes) * 100)
+  // infracoes por CC
+  const infData = infRes.data ?? [];
+  const totalInfracoes = infData.reduce((s: number, i: any) => s + (i.total_infracoes ?? 0), 0);
+  const custoTotal = infData.reduce((s: number, i: any) => s + (i.custo_total ?? 0), 0);
+
+  // variacao mensal (serie historica geral)
+  const infTempo = (infTempoRes.data ?? []).sort((a: any, b: any) => b.period.localeCompare(a.period));
+  const variacaoPct = infTempo[0] && infTempo[1]
+    ? Math.round(((infTempo[0].total_infracoes - infTempo[1].total_infracoes) / infTempo[1].total_infracoes) * 100)
     : 0;
 
-  // tempo-aprovacao-gestor — top 5 mais lentos com >= 3 aprovacoes
-  const toH = (min: number) => Math.round((min / 60) * 10) / 10;
-  const apFiltrado = (apRes.data ?? [])
-    .filter((a: any) => a.total_aprovacoes >= 3)
-    .sort((a: any, b: any) => b.tempo_medio_minutos - a.tempo_medio_minutos)
-    .slice(0, 5);
-  const todosMedios = (apRes.data ?? []).filter((a: any) => a.tempo_medio_minutos > 0);
-  const tempoMedioH = todosMedios.length > 0
-    ? toH(todosMedios.reduce((s: number, a: any) => s + a.tempo_medio_minutos, 0) / todosMedios.length)
+  // aprovacoes — já vem em horas
+  const apData = apRes.data ?? [];
+  const tempoMedioH = apData.length > 0
+    ? Math.round((apData.reduce((s: number, a: any) => s + (a.tempo_medio_horas ?? 0), 0) / apData.length) * 10) / 10
     : 0;
 
-  // auto-aprovacao-sugestao
-  const autoData = autoRes.data ?? [];
-  const totalRes  = autoData.reduce((s: number, c: any) => s + (c.total_reservas ?? 0), 0);
-  const totalDent = autoData.reduce((s: number, c: any) => s + (c.dentro_politica ?? 0), 0);
-  const mediaAdh  = totalRes > 0 ? Math.round((totalDent / totalRes) * 100) : 0;
-  const tmAutoH   = autoData.length > 0
-    ? toH(autoData.reduce((s: number, c: any) => s + (c.tempo_medio_aprovacao_min ?? 0), 0) / autoData.length)
-    : 0;
+  // aderencia por viajante
+  const adrData = adrRes.data ?? [];
+  const totalRes = adrData.reduce((s: number, v: any) => s + (v.total_reservas ?? 0), 0);
+  const totalDentro = adrData.reduce((s: number, v: any) => s + (v.dentro_politica ?? 0), 0);
+  const mediaAdh = totalRes > 0 ? Math.round((totalDentro / totalRes) * 100) : 0;
+
+  // simulador
+  const simData = simRes ?? {};
 
   return {
-    empresa: "Base Onfly",
-    periodo: "ultimos 90 dias",
+    empresa: `Empresa ${companyId}`,
+    periodo: 'ultimos 90 dias',
     data_extracao: new Date().toISOString().split('T')[0],
     resumo_infracoes: {
-      total: mesAtual.total_infracoes ?? 0,
+      total: totalInfracoes,
+      custo_total: Math.round(custoTotal),
       variacao_mes_anterior_pct: variacaoPct,
-      cost_centers_afetados: mesAtual.cost_centers_afetados ?? 0,
-      historico_mensal: inf.slice(0, 3).map((d: any) => ({
-        periodo: d.period?.slice(0, 7),
-        total_infracoes: d.total_infracoes,
+      por_centro_custo: infData.slice(0, 6).map((i: any) => ({
+        cc: i.centro_custo,
+        total: i.total_infracoes,
+        custo_total: Math.round(i.custo_total ?? 0),
       })),
     },
     aprovacoes: {
       tempo_medio_horas: tempoMedioH,
-      total_aprovadores: (apRes.data ?? []).length,
-      por_aprovador: apFiltrado.map((a: any) => ({
-        nome: a.approver_name,
-        tempo_medio_horas: toH(a.tempo_medio_minutos),
+      total_aprovadores: apData.length,
+      por_aprovador: apData.slice(0, 5).map((a: any) => ({
+        nome: a.nome,
+        tempo_medio_horas: a.tempo_medio_horas,
         pendentes: a.pendentes ?? 0,
         total_aprovacoes: a.total_aprovacoes,
+        custo_atraso: a.custo_atraso ?? 0,
       })),
     },
     score_aderencia: {
       media_empresa_pct: mediaAdh,
-      total_reservas_analisadas: totalRes,
-      empresas_candidatas_auto_aprovacao: autoData.length,
+      total_reservas: totalRes,
+      total_viajantes: adrData.length,
+      por_viajante: adrData.slice(0, 5).map((v: any) => ({
+        nome: v.viajante,
+        score: v.pct_aderencia,
+        total_reservas: v.total_reservas,
+        dentro_politica: v.dentro_politica,
+        fora_politica: v.fora_politica,
+      })),
     },
-    auto_aprovacao: {
-      padroes: [{
-        descricao: `${autoData.length} empresas com >80% reservas dentro da politica`,
-        ocorrencias: autoData.length,
-        taxa_dentro_politica_pct: mediaAdh,
-        tempo_medio_aprovacao_horas: tmAutoH,
-      }],
+    simulador_base: {
+      limite_atual: simData.limite ?? 350,
+      total_reservas: simData.total_reservas ?? 0,
+      reservas_acima_limite: simData.reservas_acima_limite ?? 0,
+      economia_estimada: Math.round(simData.economia_estimada ?? 0),
+      ticket_medio: Math.round(simData.ticket_medio ?? 0),
+      custo_total_periodo: Math.round(simData.custo_total_periodo ?? 0),
     },
   };
 }
@@ -177,13 +182,15 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { pergunta } = await req.json();
+    const body = await req.json();
+    const { pergunta, company_id } = body;
     if (!pergunta) {
       return new Response(JSON.stringify({ error: 'Campo "pergunta" obrigatorio' }), { status: 400 });
     }
 
-    // 1. Monta contexto
-    const contexto = await assembleContexto();
+    // 1. Monta contexto (company_id opcional, default demo)
+    const companyId = Number(company_id) || DEMO_COMPANY_ID;
+    const contexto = await assembleContexto(companyId);
     const systemPrompt = SYSTEM_PROMPT.replace('{CONTEXTO_DADOS}', JSON.stringify(contexto, null, 2));
 
     // 2. Chama Claude
