@@ -1,9 +1,64 @@
-function App() {
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
+import { AppLayout } from "@/components/layout/app-layout";
+import { PrivateRoute } from "@/components/layout/private-route";
+import { LoginPage } from "@/pages/login";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      retry: 1,
+    },
+  },
+});
+
+function AppRoutes() {
+  useAuth();
+
   return (
-    <div className="min-h-screen bg-background">
-      <h1 className="text-2xl font-bold text-primary p-8">ProductOS</h1>
-    </div>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/"
+        element={
+          <PrivateRoute>
+            <AppLayout />
+          </PrivateRoute>
+        }
+      >
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route
+          path="dashboard"
+          element={
+            <div className="text-gray-500">Dashboard (em breve)</div>
+          }
+        />
+        <Route
+          path="okrs"
+          element={
+            <div className="text-gray-500">OKRs (em breve)</div>
+          }
+        />
+        <Route
+          path="settings"
+          element={
+            <div className="text-gray-500">Configurações (em breve)</div>
+          }
+        />
+      </Route>
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
+}
