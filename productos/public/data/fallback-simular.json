@@ -1,0 +1,13 @@
+{
+  "resposta": "Se o limite de hotel subir de R$ 350 para R$ 500, 32 infracoes seriam eliminadas (68% do total). O custo adicional estimado e R$ 18.400/mes, parcialmente compensado pela economia de R$ 14.900 em tarifas + horas de gestores.",
+  "dados": [
+    { "label": "Infracoes eliminadas", "valor": "-32 (68%)", "tipo": "success" },
+    { "label": "Custo adicional estimado", "valor": "R$ 18.400/mes", "tipo": "warning" },
+    { "label": "Economia em tarifas", "valor": "R$ 8.700", "tipo": "success" },
+    { "label": "Economia em horas gestores", "valor": "R$ 6.200", "tipo": "success" },
+    { "label": "Saldo liquido", "valor": "-R$ 3.500", "tipo": "warning" },
+    { "label": "Ganho NPS viajante", "valor": "+22 pts", "tipo": "success" }
+  ],
+  "acao": "simular_politica",
+  "parametros": { "limite_atual": 350, "limite_simulado": 500 }
+}

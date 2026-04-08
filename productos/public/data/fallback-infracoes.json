@@ -1,0 +1,12 @@
+{
+  "resposta": "Este mes foram 47 infracoes de politica, 18% a mais que o mes anterior. O centro de custo Comercial lidera com 12 ocorrencias e R$ 8.400 de custo excedente.",
+  "dados": [
+    { "label": "Total de infracoes", "valor": "47", "tipo": "danger" },
+    { "label": "Maior infrator (CC)", "valor": "Comercial (12)", "tipo": "warning" },
+    { "label": "Custo excedente total", "valor": "R$ 23.400", "tipo": "danger" },
+    { "label": "Tipo mais frequente", "valor": "Hotel acima do limite (28)", "tipo": "danger" },
+    { "label": "vs. mes anterior", "valor": "+18%", "tipo": "danger" }
+  ],
+  "acao": "detalhar_centro_custo",
+  "parametros": { "cc": "Comercial", "periodo": "30d" }
+}

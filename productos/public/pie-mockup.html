@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Policy Intelligence Engine — Onfly</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary: #009EFB;
+      --primary-dark: #0080CC;
+      --bg: #0F172A;
+      --card: #1E293B;
+      --card-hover: #263548;
+      --border: #334155;
+      --text: #F1F5F9;
+      --text-muted: #94A3B8;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --chat-bg: #162032;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ===== LAYOUT ===== */
+    .app {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      grid-template-rows: 56px 1fr;
+      height: 100vh;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), #00D4FF);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .logo-text {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .logo-text span {
+      color: var(--primary);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .company-badge {
+      background: var(--bg);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), #7C3AED);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* ===== CHAT PANEL ===== */
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--chat-bg);
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .chat-header h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px 20px;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+    }
+
+    .chip {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .chip:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    .chip.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .message {
+      max-width: 90%;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .message.user {
+      align-self: flex-end;
+    }
+
+    .message.ai {
+      align-self: flex-start;
+    }
+
+    .message-bubble {
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .message.user .message-bubble {
+      background: var(--primary);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.ai .message-bubble {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+
+    .message-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      padding: 0 4px;
+    }
+
+    .message.user .message-label {
+      text-align: right;
+    }
+
+    .ai-data {
+      margin-top: 8px;
+      background: rgba(0, 158, 251, 0.08);
+      border: 1px solid rgba(0, 158, 251, 0.2);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    .ai-data-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+    }
+
+    .ai-data-row .label {
+      color: var(--text-muted);
+    }
+
+    .ai-data-row .value {
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .ai-data-row .value.danger {
+      color: var(--danger);
+    }
+
+    .ai-data-row .value.warning {
+      color: var(--warning);
+    }
+
+    .ai-data-row .value.success {
+      color: var(--success);
+    }
+
+    .chat-input {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .input-wrapper {
+      display: flex;
+      align-items: center;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 12px;
+      gap: 8px;
+      transition: border-color 0.2s;
+    }
+
+    .input-wrapper:focus-within {
+      border-color: var(--primary);
+    }
+
+    .input-wrapper input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .input-wrapper input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .send-btn {
+      background: var(--primary);
+      border: none;
+      border-radius: 8px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+      color: white;
+      font-size: 16px;
+    }
+
+    .send-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    /* ===== DASHBOARD ===== */
+    .dashboard {
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .dashboard-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .metric-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.3s;
+    }
+
+    .metric-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .metric-card.highlight {
+      border-color: var(--primary);
+      background: linear-gradient(135deg, var(--card), rgba(0, 158, 251, 0.08));
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .metric-trend {
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .metric-trend.up { color: var(--success); }
+    .metric-trend.down { color: var(--danger); }
+    .metric-trend.neutral { color: var(--warning); }
+
+    /* ===== BAR CHART ===== */
+    .chart-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .chart-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chart-title .badge {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+
+    .bar-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .bar-label {
+      width: 100px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 24px;
+      background: rgba(51, 65, 85, 0.5);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 1s ease;
+      display: flex;
+      align-items: center;
+      padding-left: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .bar-count {
+      font-size: 13px;
+      font-weight: 600;
+      width: 30px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* ===== SIMULATOR ===== */
+    .simulator {
+      background: linear-gradient(135deg, var(--card), rgba(0, 158, 251, 0.06));
+      border: 2px solid var(--primary);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .simulator::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(0, 158, 251, 0.05), transparent);
+      pointer-events: none;
+    }
+
+    .simulator-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .simulator-title {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .simulator-badge {
+      background: var(--primary);
+      color: white;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      animation: pulse 2s infinite;
+    }
+
+    .slider-container {
+      margin-bottom: 20px;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .slider-label .current {
+      color: var(--text-muted);
+    }
+
+    .slider-label .value {
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--primary);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--val, 33%), var(--border) var(--val, 33%), var(--border) 100%);
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--primary);
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0, 158, 251, 0.4);
+      cursor: grab;
+    }
+
+    .simulator-results {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .sim-result {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .sim-result .sim-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+
+    .sim-result .sim-value {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .sim-result .sim-value.positive { color: var(--success); }
+    .sim-result .sim-value.negative { color: var(--danger); }
+    .sim-result .sim-value.info { color: var(--primary); }
+
+    /* ===== AUTO-APPROVAL ===== */
+    .auto-approval {
+      background: var(--card);
+      border: 1px solid var(--success);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .auto-approval-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(16, 185, 129, 0.15);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .auto-approval-content h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .auto-approval-content p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .auto-approval-content .highlight-num {
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    .auto-approval-action {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-sm {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-sm.primary {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-sm.ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .btn-sm:hover {
+      opacity: 0.85;
+    }
+
+    /* ===== RANKING TABLE ===== */
+    .ranking-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .mini-table {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .mini-table h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .table-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .table-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: rgba(15, 23, 42, 0.4);
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .table-row .rank {
+      width: 24px;
+      height: 24px;
+      background: var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+
+    .table-row .name {
+      flex: 1;
+      color: var(--text);
+    }
+
+    .table-row .score {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .score-bar {
+      width: 60px;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-left: 10px;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    /* ===== GAUGE ===== */
+    .gauge-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 0;
+    }
+
+    .gauge {
+      width: 120px;
+      height: 60px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .gauge::before {
+      content: '';
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 10px solid var(--border);
+      border-bottom-color: transparent;
+      border-left-color: transparent;
+      transform: rotate(-45deg);
+      top: 0;
+      left: 0;
+    }
+
+    .gauge::after {
+      content: '';
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 10px solid var(--primary);
+      border-bottom-color: transparent;
+      border-left-color: transparent;
+      transform: rotate(-45deg);
+      top: 0;
+      left: 0;
+      clip-path: polygon(0 0, 72% 0, 72% 100%, 0 100%);
+    }
+
+    .gauge-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .gauge-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ===== TYPING INDICATOR ===== */
+    .typing {
+      display: flex;
+      gap: 4px;
+      padding: 8px 0;
+    }
+
+    .typing span {
+      width: 6px;
+      height: 6px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite;
+    }
+
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-4px); }
+    }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1024px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: 56px 300px 1fr;
+      }
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+      .simulator-results { grid-template-columns: repeat(2, 1fr); }
+      .ranking-section { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo-icon">&#9889;</div>
+      <div class="logo-text"><span>Policy</span> Intelligence Engine</div>
+    </div>
+    <div class="header-right">
+      <div class="company-badge">Onfly Viagens</div>
+      <div class="avatar">RC</div>
+    </div>
+  </header>
+
+  <!-- CHAT PANEL -->
+  <aside class="chat-panel">
+    <div class="chat-header">
+      <h2>Assistente de Politica</h2>
+    </div>
+
+    <div class="chips">
+      <div class="chip active" onclick="showConversation('infracoes')">Infracoes este mes</div>
+      <div class="chip" onclick="showConversation('aprovacoes')">Aprovacoes lentas</div>
+      <div class="chip" onclick="showConversation('simular')">Simular politica</div>
+      <div class="chip" onclick="showConversation('ranking')">Ranking aderencia</div>
+    </div>
+
+    <div class="messages" id="chatMessages">
+      <!-- Default conversation -->
+      <div class="message user">
+        <div class="message-label">Voce</div>
+        <div class="message-bubble">Quantas infracoes de politica tivemos este mes?</div>
+      </div>
+
+      <div class="message ai">
+        <div class="message-label">Policy Intelligence</div>
+        <div class="message-bubble">
+          Este mes voces tiveram <strong>47 infracoes</strong> de politica de viagem. O centro de custo <strong>Comercial</strong> lidera com 12 ocorrencias, seguido por Engenharia (9) e Marketing (8).
+          <div class="ai-data">
+            <div class="ai-data-row">
+              <span class="label">Total de infracoes</span>
+              <span class="value danger">47</span>
+            </div>
+            <div class="ai-data-row">
+              <span class="label">Maior infrator (CC)</span>
+              <span class="value warning">Comercial (12)</span>
+            </div>
+            <div class="ai-data-row">
+              <span class="label">Custo excedente total</span>
+              <span class="value danger">R$ 23.400</span>
+            </div>
+            <div class="ai-data-row">
+              <span class="label">vs. mes anterior</span>
+              <span class="value danger">+18%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="message ai">
+        <div class="message-label">Policy Intelligence</div>
+        <div class="message-bubble">
+          O principal tipo de infracao e <strong>hotel acima do limite</strong> (28 casos). Quer que eu simule o impacto de ajustar o limite de R$ 350 para R$ 400?
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input">
+      <div class="input-wrapper">
+        <input type="text" placeholder="Pergunte sobre suas politicas..." id="chatInput" onkeydown="if(event.key==='Enter')sendMessage()">
+        <button class="send-btn" onclick="sendMessage()">&#8593;</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- DASHBOARD -->
+  <main class="dashboard">
+    <div class="dashboard-title">Dashboard Reativo</div>
+
+    <!-- Metric Cards -->
+    <div class="metrics-grid">
+      <div class="metric-card highlight">
+        <div class="metric-label">Infracoes no Mes</div>
+        <div class="metric-value" style="color: var(--danger)">47</div>
+        <div class="metric-trend down">&#9650; 18% vs. mes anterior</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-label">Tempo Medio Aprovacao</div>
+        <div class="metric-value" style="color: var(--warning)">2.3d</div>
+        <div class="metric-trend neutral">&#9644; estavel</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-label">Score de Aderencia</div>
+        <div class="gauge-container">
+          <div class="gauge-value">72%</div>
+          <div class="gauge-label">medio — meta: 85%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bar Chart: Infractions by Cost Center -->
+    <div class="chart-section">
+      <div class="chart-title">
+        Infracoes por Centro de Custo
+        <span class="badge">47 total</span>
+      </div>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <span class="bar-label">Comercial</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width: 80%; background: var(--danger)"></div>
+          </div>
+          <span class="bar-count" style="color: var(--danger)">12</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Engenharia</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width: 60%; background: var(--warning)"></div>
+          </div>
+          <span class="bar-count" style="color: var(--warning)">9</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Marketing</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width: 53%; background: var(--warning)"></div>
+          </div>
+          <span class="bar-count" style="color: var(--warning)">8</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Financeiro</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width: 40%; background: var(--primary)"></div>
+          </div>
+          <span class="bar-count" style="color: var(--primary)">6</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">RH</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width: 33%; background: var(--primary)"></div>
+          </div>
+          <span class="bar-count" style="color: var(--primary)">5</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Outros</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width: 47%; background: var(--text-muted)"></div>
+          </div>
+          <span class="bar-count" style="color: var(--text-muted)">7</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Policy Simulator -->
+    <div class="simulator" id="simulator">
+      <div class="simulator-header">
+        <div class="simulator-title">
+          &#9881; Simulador de Politica
+          <span class="simulator-badge">Ao Vivo</span>
+        </div>
+      </div>
+
+      <div class="slider-container">
+        <div class="slider-label">
+          <span class="current">Limite diaria de hotel</span>
+          <span class="value" id="sliderValue">R$ 400</span>
+        </div>
+        <input type="range" min="200" max="800" value="400" step="25" id="policySlider" oninput="updateSimulator(this.value)">
+      </div>
+
+      <div class="simulator-results">
+        <div class="sim-result">
+          <div class="sim-label">Reservas Impactadas</div>
+          <div class="sim-value info" id="simReservas">23</div>
+        </div>
+        <div class="sim-result">
+          <div class="sim-label">Economia Estimada</div>
+          <div class="sim-value positive" id="simEconomia">R$ 12.4k</div>
+        </div>
+        <div class="sim-result">
+          <div class="sim-label">Infracoes Evitadas</div>
+          <div class="sim-value positive" id="simInfracoes">-15</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Auto-approval Suggestion -->
+    <div class="auto-approval">
+      <div class="auto-approval-icon">&#10003;</div>
+      <div class="auto-approval-content">
+        <h3>Sugestao de Auto-aprovacao</h3>
+        <p>
+          <span class="highlight-num">87 aprovacoes</span> nos ultimos 30 dias seguiram o mesmo padrao:
+          hospedagem &lt; R$ 350, viagem domestica, ate 2 noites. Todas foram aprovadas em &lt; 1h.
+        </p>
+        <p style="margin-top: 6px; color: var(--success); font-weight: 600;">
+          Criar regra automatica economizaria ~14h/mes do time de aprovadores.
+        </p>
+        <div class="auto-approval-action">
+          <button class="btn-sm primary">Criar Regra</button>
+          <button class="btn-sm ghost">Ver Detalhes</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ranking Tables -->
+    <div class="ranking-section">
+      <div class="mini-table">
+        <h3>&#128100; Top Infratores</h3>
+        <div class="table-rows">
+          <div class="table-row">
+            <span class="rank" style="background: var(--danger)">1</span>
+            <span class="name">Carlos Silva</span>
+            <span class="score" style="color: var(--danger)">8</span>
+          </div>
+          <div class="table-row">
+            <span class="rank">2</span>
+            <span class="name">Ana Mendes</span>
+            <span class="score" style="color: var(--warning)">6</span>
+          </div>
+          <div class="table-row">
+            <span class="rank">3</span>
+            <span class="name">Pedro Rocha</span>
+            <span class="score" style="color: var(--warning)">5</span>
+          </div>
+          <div class="table-row">
+            <span class="rank">4</span>
+            <span class="name">Julia Costa</span>
+            <span class="score" style="color: var(--text-muted)">4</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mini-table">
+        <h3>&#127942; Score de Aderencia</h3>
+        <div class="table-rows">
+          <div class="table-row">
+            <span class="rank" style="background: var(--success)">1</span>
+            <span class="name">Lucia Ferreira</span>
+            <span class="score" style="color: var(--success)">96%</span>
+            <div class="score-bar"><div class="score-bar-fill" style="width: 96%; background: var(--success)"></div></div>
+          </div>
+          <div class="table-row">
+            <span class="rank" style="background: var(--success)">2</span>
+            <span class="name">Marcos Lima</span>
+            <span class="score" style="color: var(--success)">91%</span>
+            <div class="score-bar"><div class="score-bar-fill" style="width: 91%; background: var(--success)"></div></div>
+          </div>
+          <div class="table-row">
+            <span class="rank">3</span>
+            <span class="name">Beatriz Santos</span>
+            <span class="score" style="color: var(--warning)">74%</span>
+            <div class="score-bar"><div class="score-bar-fill" style="width: 74%; background: var(--warning)"></div></div>
+          </div>
+          <div class="table-row">
+            <span class="rank">4</span>
+            <span class="name">Carlos Silva</span>
+            <span class="score" style="color: var(--danger)">42%</span>
+            <div class="score-bar"><div class="score-bar-fill" style="width: 42%; background: var(--danger)"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  // Simulator logic
+  function updateSimulator(val) {
+    const value = parseInt(val);
+    const range = document.getElementById('policySlider');
+    const pct = ((value - 200) / 600) * 100;
+    range.style.setProperty('--val', pct + '%');
+
+    document.getElementById('sliderValue').textContent = 'R$ ' + value;
+
+    // Simulate impact based on slider value
+    const baseReservas = 47;
+    const ratio = (400 - value) / 400;
+    const reservas = Math.max(0, Math.round(baseReservas * Math.abs(ratio) * 1.2));
+    const economia = Math.abs(ratio) * 28000;
+    const infracoes = value >= 400 ? Math.round((value - 400) / 25 * 2) : -Math.round((400 - value) / 25 * 2);
+
+    document.getElementById('simReservas').textContent = reservas;
+    document.getElementById('simEconomia').textContent = 'R$ ' + (economia / 1000).toFixed(1) + 'k';
+
+    const infraEl = document.getElementById('simInfracoes');
+    if (value > 400) {
+      infraEl.textContent = '-' + Math.abs(infracoes);
+      infraEl.className = 'sim-value positive';
+    } else if (value < 400) {
+      infraEl.textContent = '+' + Math.abs(infracoes);
+      infraEl.className = 'sim-value negative';
+    } else {
+      infraEl.textContent = '0';
+      infraEl.className = 'sim-value info';
+    }
+  }
+
+  // Initialize slider visual
+  updateSimulator(400);
+
+  // Chat conversations
+  const conversations = {
+    infracoes: [
+      { role: 'user', text: 'Quantas infracoes de politica tivemos este mes?' },
+      { role: 'ai', text: 'Este mes voces tiveram <strong>47 infracoes</strong> de politica de viagem. O centro de custo <strong>Comercial</strong> lidera com 12 ocorrencias, seguido por Engenharia (9) e Marketing (8).', data: [
+        { label: 'Total de infracoes', value: '47', cls: 'danger' },
+        { label: 'Maior infrator (CC)', value: 'Comercial (12)', cls: 'warning' },
+        { label: 'Custo excedente total', value: 'R$ 23.400', cls: 'danger' },
+        { label: 'vs. mes anterior', value: '+18%', cls: 'danger' },
+      ]},
+      { role: 'ai', text: 'O principal tipo de infracao e <strong>hotel acima do limite</strong> (28 casos). Quer que eu simule o impacto de ajustar o limite de R$ 350 para R$ 400?' }
+    ],
+    aprovacoes: [
+      { role: 'user', text: 'Quais aprovacoes estao demorando mais?' },
+      { role: 'ai', text: 'O tempo medio de aprovacao esta em <strong>2.3 dias</strong>, mas alguns gestores estao muito acima disso:', data: [
+        { label: 'Ricardo Almeida', value: '4.8 dias', cls: 'danger' },
+        { label: 'Fernanda Costa', value: '3.2 dias', cls: 'warning' },
+        { label: 'Bruno Oliveira', value: '1.1 dias', cls: 'success' },
+        { label: 'Custo do atraso (mes)', value: 'R$ 8.700', cls: 'danger' },
+      ]},
+      { role: 'ai', text: 'Ricardo Almeida tem <strong>23 aprovacoes pendentes</strong> ha mais de 3 dias. O custo estimado desse atraso e R$ 4.200 em tarifas que subiram enquanto aguardavam aprovacao.' }
+    ],
+    simular: [
+      { role: 'user', text: 'Simular: e se aumentarmos o limite de hotel para R$ 500?' },
+      { role: 'ai', text: 'Simulacao completa! Se o limite de hotel subir de R$ 350 para R$ 500:', data: [
+        { label: 'Infracoes eliminadas', value: '-32 (68%)', cls: 'success' },
+        { label: 'Custo adicional estimado', value: 'R$ 18.400/mes', cls: 'warning' },
+        { label: 'Tempo de aprovacao', value: '-1.4 dias', cls: 'success' },
+        { label: 'Satisfacao viajante', value: '+22 pts NPS', cls: 'success' },
+      ]},
+      { role: 'ai', text: 'O custo adicional de R$ 18.4k e compensado pela economia de R$ 8.7k em tarifas que subiam durante aprovacao + R$ 6.2k em horas de gestores. <strong>Saldo: +R$ 3.5k negativo, mas com ganho de satisfacao.</strong>' }
+    ],
+    ranking: [
+      { role: 'user', text: 'Qual o ranking de aderencia dos viajantes?' },
+      { role: 'ai', text: 'Aqui esta o ranking de aderencia a politica dos ultimos 30 dias:', data: [
+        { label: 'Aderencia media', value: '72%', cls: 'warning' },
+        { label: 'Melhor viajante', value: 'Lucia Ferreira (96%)', cls: 'success' },
+        { label: 'Pior viajante', value: 'Carlos Silva (42%)', cls: 'danger' },
+        { label: 'Viajantes acima de 85%', value: '34 de 89', cls: 'success' },
+      ]},
+      { role: 'ai', text: 'Carlos Silva tem score de <strong>42%</strong> por conta de 8 infracoes em hotel e 3 em transporte. Ele e do time Comercial, que lidera as infracoes. Quer que eu sugira uma abordagem?' }
+    ]
+  };
+
+  function showConversation(key) {
+    // Update active chip
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    event.target.classList.add('active');
+
+    const msgs = conversations[key];
+    const container = document.getElementById('chatMessages');
+    container.innerHTML = '';
+
+    msgs.forEach((msg, i) => {
+      setTimeout(() => {
+        const div = document.createElement('div');
+        div.className = 'message ' + msg.role;
+
+        let html = '<div class="message-label">' + (msg.role === 'user' ? 'Voce' : 'Policy Intelligence') + '</div>';
+        html += '<div class="message-bubble">' + msg.text;
+
+        if (msg.data) {
+          html += '<div class="ai-data">';
+          msg.data.forEach(d => {
+            html += '<div class="ai-data-row"><span class="label">' + d.label + '</span><span class="value ' + d.cls + '">' + d.value + '</span></div>';
+          });
+          html += '</div>';
+        }
+
+        html += '</div>';
+        div.innerHTML = html;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+      }, i * 400);
+    });
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    const container = document.getElementById('chatMessages');
+
+    // Add user message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'message user';
+    userMsg.innerHTML = '<div class="message-label">Voce</div><div class="message-bubble">' + text + '</div>';
+    container.appendChild(userMsg);
+
+    input.value = '';
+
+    // Add typing indicator
+    const typing = document.createElement('div');
+    typing.className = 'message ai';
+    typing.innerHTML = '<div class="message-label">Policy Intelligence</div><div class="message-bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+    container.appendChild(typing);
+    container.scrollTop = container.scrollHeight;
+
+    // Simulate AI response
+    setTimeout(() => {
+      typing.innerHTML = '<div class="message-label">Policy Intelligence</div><div class="message-bubble">Analisando os dados de viagem da Onfly para responder sua pergunta... <br><br>Essa funcionalidade esta em desenvolvimento para o hackathon. No produto final, eu consultaria o BigQuery em tempo real e traria a resposta com dados estruturados.</div>';
+      container.scrollTop = container.scrollHeight;
+    }, 1500);
+  }
+</script>
+
+</body>
+</html>

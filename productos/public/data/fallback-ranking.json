@@ -1,0 +1,12 @@
+{
+  "resposta": "A aderencia media da empresa esta em 72%. Carlos Silva e o pior com 42% (8 infracoes em hotel, 3 em transporte). Ele e do time Comercial, que lidera as infracoes.",
+  "dados": [
+    { "label": "Aderencia media", "valor": "72%", "tipo": "warning" },
+    { "label": "Melhor viajante", "valor": "Lucia Ferreira (96%)", "tipo": "success" },
+    { "label": "Pior viajante", "valor": "Carlos Silva (42%)", "tipo": "danger" },
+    { "label": "Viajantes acima de 85%", "valor": "34 de 89", "tipo": "info" },
+    { "label": "CC mais aderente", "valor": "Financeiro (88%)", "tipo": "success" }
+  ],
+  "acao": "detalhar_centro_custo",
+  "parametros": { "cc": "Comercial", "viajante": "Carlos Silva" }
+}
