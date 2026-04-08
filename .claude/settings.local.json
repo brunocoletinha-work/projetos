@@ -14,7 +14,13 @@
       "Bash(git clone:*)",
       "Bash(git commit:*)",
       "Bash(npx tsc:*)",
-      "Bash(npx shadcn@latest add alert-dialog --yes)"
+      "Bash(npx shadcn@latest add alert-dialog --yes)",
+      "Bash(gh auth:*)",
+      "Bash(winget install:*)",
+      "Bash(choco install:*)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
+      "Bash(gh repo:*)",
+      "Bash(gh pr:*)"
     ]
   }
 }
