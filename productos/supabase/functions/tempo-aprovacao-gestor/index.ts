@@ -11,14 +11,16 @@ Deno.serve(async (req: Request) => {
 
     const sql = `
       SELECT
-        approver_name,
+        u.name AS approver_name,
         COUNT(*) AS total_aprovacoes,
-        ROUND(AVG(TIMESTAMP_DIFF(approval_date, previus_date, MINUTE)), 0) AS tempo_medio_minutos,
-        COUNTIF(is_finished = 0) AS pendentes
-      FROM \`dw-onfly-prd.management_core.all_approvers_travel_bi\`
-      WHERE previus_date >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @period_days DAY)
-        AND approver_name IS NOT NULL
-      GROUP BY approver_name
+        ROUND(AVG(TIMESTAMP_DIFF(h.history_created_at, h.previous_date_history_approval, MINUTE)), 0) AS tempo_medio_minutos,
+        COUNTIF(h.is_finished = 0) AS pendentes
+      FROM \`dw-onfly-prd.management_core.fact_ms_approval_history_travel_bi\` h
+      JOIN \`dw-onfly-prd.management_core.dim_users\` u ON u.id = CAST(h.approver AS INT64)
+      WHERE h.history_created_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @period_days DAY)
+        AND h.approver IS NOT NULL
+        AND h.previous_date_history_approval IS NOT NULL
+      GROUP BY u.name
       ORDER BY tempo_medio_minutos DESC
     `;
 
