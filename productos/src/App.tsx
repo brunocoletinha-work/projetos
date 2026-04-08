@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { AppLayout } from "@/components/layout/app-layout";
 import { PrivateRoute } from "@/components/layout/private-route";
 import { LoginPage } from "@/pages/login";
+import { DashboardPage } from "@/pages/dashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,9 +32,7 @@ function AppRoutes() {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route
           path="dashboard"
-          element={
-            <div className="text-gray-500">Dashboard (em breve)</div>
-          }
+          element={<DashboardPage />}
         />
         <Route
           path="okrs"
