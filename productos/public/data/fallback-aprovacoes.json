@@ -1,0 +1,12 @@
+{
+  "resposta": "O tempo medio de aprovacao esta em 2.3 dias. Ricardo Almeida esta critico com 4.8 dias e 23 aprovacoes paradas. O custo estimado dos atrasos e R$ 8.700 em tarifas que subiram.",
+  "dados": [
+    { "label": "Tempo medio geral", "valor": "2.3 dias", "tipo": "warning" },
+    { "label": "Ricardo Almeida", "valor": "4.8 dias (23 pendentes)", "tipo": "danger" },
+    { "label": "Fernanda Costa", "valor": "3.2 dias (8 pendentes)", "tipo": "danger" },
+    { "label": "Bruno Oliveira", "valor": "1.1 dias (2 pendentes)", "tipo": "success" },
+    { "label": "Custo do atraso (mes)", "valor": "R$ 8.700", "tipo": "danger" }
+  ],
+  "acao": "alertar_gestor",
+  "parametros": { "aprovador": "Ricardo Almeida", "pendentes": 23 }
+}

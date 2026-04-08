@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Policy Intelligence Engine — Board do Projeto</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary: #009EFB;
+      --bg: #0F172A;
+      --card: #1E293B;
+      --border: #334155;
+      --text: #F1F5F9;
+      --muted: #94A3B8;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --purple: #8B5CF6;
+      --pink: #EC4899;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* HEADER */
+    .page-header {
+      background: linear-gradient(135deg, #0F172A, #1a2744);
+      border-bottom: 1px solid var(--border);
+      padding: 32px 40px;
+    }
+
+    .page-header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .page-header h1 span { color: var(--primary); }
+
+    .page-header p {
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .team-bar {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .team-member {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 6px 16px 6px 6px;
+      font-size: 13px;
+    }
+
+    .team-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .team-role {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    /* PRODUCT VISION */
+    .vision {
+      padding: 32px 40px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .vision-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .vision-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .vision-card h3 {
+      font-size: 14px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .vision-card p {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* SECTION */
+    .section {
+      padding: 32px 40px;
+    }
+
+    .section-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title .count {
+      background: var(--primary);
+      color: white;
+      font-size: 11px;
+      padding: 1px 8px;
+      border-radius: 10px;
+    }
+
+    /* FEATURE CARDS */
+    .features {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .feature {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .feature:hover {
+      border-color: var(--primary);
+    }
+
+    .feature-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      cursor: pointer;
+    }
+
+    .feature-header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .feature-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .feature-name {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .feature-oneliner {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .feature-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge.core { background: rgba(0, 158, 251, 0.15); color: var(--primary); }
+    .badge.wow { background: rgba(139, 92, 246, 0.15); color: var(--purple); }
+    .badge.cut { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+    .badge.owner { border: 1px solid var(--border); color: var(--text); }
+
+    .expand-icon {
+      color: var(--muted);
+      font-size: 18px;
+      transition: transform 0.2s;
+    }
+
+    .feature.open .expand-icon {
+      transform: rotate(180deg);
+    }
+
+    /* FEATURE BODY */
+    .feature-body {
+      display: none;
+      padding: 0 24px 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .feature.open .feature-body {
+      display: block;
+    }
+
+    .feature-section {
+      margin-top: 16px;
+    }
+
+    .feature-section h4 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .checklist {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 14px;
+      padding: 6px 10px;
+      background: rgba(15, 23, 42, 0.4);
+      border-radius: 8px;
+    }
+
+    .check-item .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--primary);
+      margin-top: 7px;
+      flex-shrink: 0;
+    }
+
+    .data-contract {
+      background: rgba(0, 158, 251, 0.06);
+      border: 1px solid rgba(0, 158, 251, 0.2);
+      border-radius: 10px;
+      padding: 14px;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 12px;
+      color: var(--primary);
+      white-space: pre-line;
+      line-height: 1.7;
+    }
+
+    .owner-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .owner-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px 4px 4px;
+      font-size: 12px;
+    }
+
+    .owner-tag .mini-avatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: white;
+    }
+
+    /* CONTRACT SECTION */
+    .contract-section {
+      padding: 32px 40px;
+      border-top: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(0, 158, 251, 0.03), transparent);
+    }
+
+    .contract-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .contract-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .contract-card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* TIMELINE */
+    .timeline {
+      padding: 32px 40px;
+      border-top: 1px solid var(--border);
+    }
+
+    .timeline-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+      margin-top: 16px;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .timeline-phase {
+      padding: 16px 20px;
+      text-align: center;
+    }
+
+    .timeline-phase .time {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .timeline-phase .phase-name {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .timeline-phase .phase-desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* RULES */
+    .rules {
+      padding: 32px 40px;
+      border-top: 1px solid var(--border);
+    }
+
+    .rules-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .rule-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .rule-card.do { border: 1px solid var(--success); }
+    .rule-card.dont { border: 1px solid var(--danger); }
+
+    .rule-card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .rule-card.do h3 { color: var(--success); }
+    .rule-card.dont h3 { color: var(--danger); }
+
+    .rule-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .rule-list li {
+      font-size: 13px;
+      color: var(--muted);
+      padding-left: 16px;
+      position: relative;
+    }
+
+    .rule-list li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .rule-card.do .rule-list li::before { background: var(--success); }
+    .rule-card.dont .rule-list li::before { background: var(--danger); }
+
+    @media (max-width: 768px) {
+      .vision-grid, .contract-grid, .rules-grid { grid-template-columns: 1fr; }
+      .timeline-bar { grid-template-columns: 1fr; }
+      .section, .page-header, .contract-section, .timeline, .rules { padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="page-header">
+  <h1><span>Policy</span> Intelligence Engine</h1>
+  <p>Board do projeto — Hackathon Onfly 2026</p>
+
+  <div class="team-bar">
+    <div class="team-member">
+      <div class="team-avatar" style="background: var(--primary)">DM</div>
+      <div>
+        <div>Dev Mobile</div>
+        <div class="team-role">Dados + Backend + BigQuery</div>
+      </div>
+    </div>
+    <div class="team-member">
+      <div class="team-avatar" style="background: var(--pink)">SI</div>
+      <div>
+        <div>Suporte Interno</div>
+        <div class="team-role">Frontend Lovable + UX + Validacao</div>
+      </div>
+    </div>
+    <div class="team-member">
+      <div class="team-avatar" style="background: var(--purple)">CO</div>
+      <div>
+        <div>Coleta (Produto)</div>
+        <div class="team-role">IA + System Prompt + Cola do time</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VISAO DO PRODUTO -->
+<div class="vision">
+  <div class="section-title">Visao do Produto</div>
+  <div class="vision-grid">
+    <div class="vision-card">
+      <h3>&#127919; O que e</h3>
+      <p>Motor de inteligencia que transforma dados de viagem em decisoes de gestao. Nao e relatorio — e diagnostico em tempo real com chat conversacional.</p>
+    </div>
+    <div class="vision-card">
+      <h3>&#128100; Pra quem</h3>
+      <p>Gestor de viagens corporativas. Fala direto, sem rodeios. Quer numero, nao paragrafo. Decide rapido se tem dado bom.</p>
+    </div>
+    <div class="vision-card">
+      <h3>&#128176; Impacto em GMV</h3>
+      <p>Aprovacao mais rapida = mais reservas na janela de preco. Politica cumprida = menos gasto fora do padrao. Conexao direta com meta de R$ 2.35bi.</p>
+    </div>
+  </div>
+</div>
+
+<!-- FUNCIONALIDADES -->
+<div class="section">
+  <div class="section-title">
+    Funcionalidades
+    <span class="count">6 core + 3 wow</span>
+  </div>
+
+  <div class="features">
+
+    <!-- F1: Dashboard Conversacional -->
+    <div class="feature open" onclick="this.classList.toggle('open')">
+      <div class="feature-header">
+        <div class="feature-header-left">
+          <div class="feature-icon" style="background: rgba(0,158,251,0.15)">&#128172;</div>
+          <div>
+            <div class="feature-name">Dashboard Conversacional</div>
+            <div class="feature-oneliner">Chat + metricas estaticas + reatividade</div>
+          </div>
+        </div>
+        <div class="feature-badges">
+          <span class="badge core">Core</span>
+          <span class="badge owner">Todo o time</span>
+          <span class="expand-icon">&#9660;</span>
+        </div>
+      </div>
+      <div class="feature-body">
+        <div class="feature-section">
+          <h4>O que precisa ter</h4>
+          <div class="checklist">
+            <div class="check-item"><span class="dot"></span>Area de chat no topo com input de texto e chips de atalho</div>
+            <div class="check-item"><span class="dot"></span>4 chips pre-definidos: "Infracoes este mes", "Aprovacoes lentas", "Simular politica", "Ranking aderencia"</div>
+            <div class="check-item"><span class="dot"></span>Resposta da IA com dados estruturados (tabela inline, nao texto corrido)</div>
+            <div class="check-item"><span class="dot"></span>Dashboard embaixo que reage a pergunta (cards mudam com o contexto)</div>
+            <div class="check-item"><span class="dot"></span>Typing indicator enquanto IA processa</div>
+          </div>
+        </div>
+        <div class="feature-section">
+          <h4>Quem faz o que</h4>
+          <div class="owner-row">
+            <div class="owner-tag"><div class="mini-avatar" style="background:var(--pink)">SI</div> Monta layout no Lovable</div>
+            <div class="owner-tag"><div class="mini-avatar" style="background:var(--primary)">DM</div> Endpoint de dados</div>
+            <div class="owner-tag"><div class="mini-avatar" style="background:var(--purple)">CO</div> Logica do chat + prompts</div>
+          </div>
+        </div>
+        <div class="feature-section">
+          <h4>Formato do dado (contrato)</h4>
+          <div class="data-contract">{
+  "resposta": "Texto curto da IA",
+  "dados": [
+    { "label": "Total infracoes", "valor": "47", "tipo": "danger" },
+    { "label": "Maior infrator", "valor": "Comercial", "tipo": "warning" }
+  ],
+  "acao": "simular_politica",  // opcional, sugere proxima acao
+  "parametros": { "limite_atual": 350 }
+}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F2: Auditoria de Politica -->
+    <div class="feature" onclick="this.classList.toggle('open')">
+      <div class="feature-header">
+        <div class="feature-header-left">
+          <div class="feature-icon" style="background: rgba(239,68,68,0.15)">&#128269;</div>
+          <div>
+            <div class="feature-name">Auditoria de Politica</div>
+            <div class="feature-oneliner">Infracoes por pessoa, time e centro de custo</div>
+          </div>
+        </div>
+        <div class="feature-badges">
+          <span class="badge core">Core</span>
+          <span class="badge owner">DM + SI</span>
+          <span class="expand-icon">&#9660;</span>
+        </div>
+      </div>
+      <div class="feature-body">
+        <div class="feature-section">
+          <h4>O que precisa ter</h4>
+          <div class="checklist">
+            <div class="check-item"><span class="dot"></span>Grafico de barras: infracoes por centro de custo</div>
+            <div class="check-item"><span class="dot"></span>Filtro por periodo (7d, 30d, 90d)</div>
+            <div class="check-item"><span class="dot"></span>Drill-down: clicar no CC mostra as pessoas</div>
+            <div class="check-item"><span class="dot"></span>Tipo de infracao (hotel acima do limite, classe errada, antecedencia)</div>
+            <div class="check-item"><span class="dot"></span>Custo excedente total (quanto gastou a mais do que a politica permite)</div>
+          </div>
+        </div>
+        <div class="feature-section">
+          <h4>Quem faz o que</h4>
+          <div class="owner-row">
+            <div class="owner-tag"><div class="mini-avatar" style="background:var(--primary)">DM</div> Query BigQuery: infracoes agrupadas por CC, tipo, pessoa</div>
+            <div class="owner-tag"><div class="mini-avatar" style="background:var(--pink)">SI</div> Montar grafico + tabela no Lovable</div>
+          </div>
+        </div>
+        <div class="feature-section">
+          <h4>Formato do dado</h4>
+          <div class="data-contract">[
+  { "centro_custo": "Comercial", "total": 12, "custo_excedente": 8400 },
+  { "centro_custo": "Engenharia", "total": 9, "custo_excedente": 5200 },
+  ...
+]</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F3: Mapa de Aprovadores -->
+    <div class="feature" onclick="this.classList.toggle('open')">
+      <div class="feature-header">
+        <div class="feature-header-left">
+          <div class="feature-icon" style="background: rgba(245,158,11,0.15)">&#9201;</div>
+          <div>
+            <div class="feature-name">Mapa de Aprovadores</div>
+            <div class="feature-oneliner">Tempo medio e custo financeiro do atraso</div>
+          </div>
+        </div>
+        <div class="feature-badges">
+          <span class="badge core">Core</span>
+          <span class="badge owner">DM + CO</span>
+          <span class="expand-icon">&#9660;</span>
+        </div>
+      </div>
+      <div class="feature-body">
+        <div class="feature-section">
+          <h4>O que precisa ter</h4>
+          <div class="checklist">
+            <div class="check-item"><span class="dot"></span>Lista de aprovadores com tempo medio de aprovacao</div>
+            <div class="check-item"><span class="dot"></span>Custo do atraso: diferenca de tarifa entre pedido e aprovacao</div>
+            <div class="check-item"><span class="dot"></span>Highlight: aprovadores acima de 2 dias = critico</div>
+            <div class="check-item"><span class="dot"></span>Volume de aprovacoes pendentes por pessoa</div>
+          </div>
+        </div>
+        <div class="feature-section">
+          <h4>Quem faz o que</h4>
+          <div class="owner-row">
+            <div class="owner-tag"><div class="mini-avatar" style="background:var(--primary)">DM</div> Query: tempo entre pedido e aprovacao, agrupado por aprovador</div>
+            <div class="owner-tag"><div class="mini-avatar" style="background:var(--purple)">CO</div> Logica de custo do atraso (delta de tarifa)</div>
+          </div>
+        </div>
+        <div class="feature-section">
+          <h4>Formato do dado</h4>
+          <div class="data-contract">[
+  { "aprovador": "Ricardo Almeida", "tempo_medio_dias": 4.8, "pendentes": 23, "custo_atraso": 4200 },
+  { "aprovador": "Fernanda Costa", "tempo_medio_dias": 3.2, "pendentes": 8, "custo_atraso": 2100 },
+  ...
+]</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F4: Auto-aprovacao -->
+    <div class="feature" onclick="this.classList.toggle('open')">
+      <div class="feature-header">
+        <div class="feature-header-left">
+          <div class="feature-icon" style="background: rgba(16,185,129,0.15)">&#10003;</div>
+          <div>
+            <div class="feature-name">Sugestao de Auto-aprovacao</div>
+            <div class="feature-oneliner">Cenarios repetitivos viram regra automatica</div>
+          </div>
+        </div>
+        <div class="feature-badges">
+          <span class="badge core">Core</span>
+          <span class="badge owner">CO + DM</span>
+          <span class="expand-icon">&#9660;</span>
+        </div>
+      </div>
+      <div class="feature-body">
+        <div class="feature-section">
+          <h4>O que precisa ter</h4>
+          <div class="checklist">
+            <div class="check-item"><span class="dot"></span>Detectar padroes: "X aprovacoes nos ultimos 30 dias seguiram o mesmo padrao"</div>
+            <div class="check-item"><span class="dot"></span>Mostrar o padrao: tipo de viagem + valor + destino + resultado</div>
+            <div class="check-item"><span class="dot"></span>Botao "Criar Regra" (na demo, so mostra confirmacao)</div>
+            <div class="check-item"><span class="dot"></span>Economia estimada em horas do time de aprovadores</div>
+          </div>
+        </div>
+        <div class="feature-section">
+          <h4>Quem faz o que</h4>
+          <div class="owner-row">
+            <div class="owner-tag"><div class="mini-avatar" style="background:var(--purple)">CO</div> Prompt que identifica padroes nos dados + logica de sugestao</div>
+            <div class="owner-tag"><div class="mini-avatar" style="background:var(--primary)">DM</div> Query: aprovacoes agrupadas por padrao (tipo+valor+resultado)</div>
+          </div>
+        </div>
+        <div class="feature-section">
+          <h4>Formato do dado</h4>
+          <div class="data-contract">{
+  "padrao": "Hospedagem domestica < R$350, ate 2 noites",
+  "ocorrencias": 87,
+  "taxa_aprovacao": "100%",
+  "tempo_medio": "0.8 dias",
+  "economia_horas_mes": 14,
+  "sugestao": "Criar regra de auto-aprovacao"
+}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F5: Simulador de Politica -->
+    <div class="feature" onclick="this.classList.toggle('open')">
+      <div class="feature-header">
+        <div class="feature-header-left">
+          <div class="feature-icon" style="background: rgba(0,158,251,0.2); border: 2px solid var(--primary)">&#9881;</div>
+          <div>
+            <div class="feature-name">Simulador de Politica &#11088;</div>
+            <div class="feature-oneliner">Slider de limite → IA projeta impacto em tempo real</div>
+          </div>
+        </div>
+        <div class="feature-badges">
+          <span class="badge core">Core — NAO CORTAR</span>
+          <span class="badge owner">CO + DM</span>
+          <span class="expand-icon">&#9660;</span>
+        </div>
+      </div>
+      <div class="feature-body">
+        <div class="feature-section">
+          <h4>O que precisa ter</h4>
+          <div class="checklist">
+            <div class="check-item"><span class="dot"></span>Slider: limite de hotel (R$ 200 a R$ 800)</div>
+            <div class="check-item"><span class="dot"></span>Resultado em tempo real: reservas impactadas, economia estimada, infracoes evitadas</div>
+            <div class="check-item"><span class="dot"></span>Visual impactante — e o momento "uau" da demo</div>
+            <div class="check-item"><span class="dot"></span>Baseado em dados reais (quantas reservas historicas cairiam no novo limite)</div>
+          </div>
+        </div>
+        <div class="feature-section">
+          <h4>Por que nao cortar</h4>
+          <div class="checklist">
+            <div class="check-item"><span class="dot" style="background: var(--warning)"></span>E o momento mais impactante da demo ao vivo. O juri ve o dado mudando em tempo real conforme mexe o slider. Isso vende.</div>
+          </div>
+        </div>
+        <div class="feature-section">
+          <h4>Quem faz o que</h4>
+          <div class="owner-row">
+            <div class="owner-tag"><div class="mini-avatar" style="background:var(--primary)">DM</div> Query parametrizada: dado um limite X, quantas reservas > X nos ultimos 90 dias</div>
+            <div class="owner-tag"><div class="mini-avatar" style="background:var(--purple)">CO</div> Logica de projecao (economia = soma dos deltas) + integracao</div>
+            <div class="owner-tag"><div class="mini-avatar" style="background:var(--pink)">SI</div> Slider bonito no Lovable com animacao</div>
+          </div>
+        </div>
+        <div class="feature-section">
+          <h4>Formato do dado</h4>
+          <div class="data-contract">// Endpoint recebe ?limite=400 e retorna:
+{
+  "limite": 400,
+  "reservas_impactadas": 23,
+  "economia_estimada": 12400,
+  "infracoes_evitadas": 15,
+  "periodo": "ultimos 90 dias"
+}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F6: Score de Aderencia -->
+    <div class="feature" onclick="this.classList.toggle('open')">
+      <div class="feature-header">
+        <div class="feature-header-left">
+          <div class="feature-icon" style="background: rgba(16,185,129,0.15)">&#127942;</div>
+          <div>
+            <div class="feature-name">Score de Aderencia</div>
+            <div class="feature-oneliner">Ranking de viajantes por cumprimento da politica</div>
+          </div>
+        </div>
+        <div class="feature-badges">
+          <span class="badge core">Core</span>
+          <span class="badge owner">DM + SI</span>
+          <span class="expand-icon">&#9660;</span>
+        </div>
+      </div>
+      <div class="feature-body">
+        <div class="feature-section">
+          <h4>O que precisa ter</h4>
+          <div class="checklist">
+            <div class="check-item"><span class="dot"></span>Score 0-100% por viajante (viagens dentro da politica / total)</div>
+            <div class="check-item"><span class="dot"></span>Ranking visual com barras de progresso</div>
+            <div class="check-item"><span class="dot"></span>Media geral da empresa</div>
+            <div class="check-item"><span class="dot"></span>Destaques: melhor e pior viajante</div>
+          </div>
+        </div>
+        <div class="feature-section">
+          <h4>Quem faz o que</h4>
+          <div class="owner-row">
+            <div class="owner-tag"><div class="mini-avatar" style="background:var(--primary)">DM</div> Query: viagens por pessoa, % dentro da politica</div>
+            <div class="owner-tag"><div class="mini-avatar" style="background:var(--pink)">SI</div> Tabela/ranking no Lovable</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEPARATOR -->
+    <div style="border-top: 2px dashed var(--border); margin: 8px 0;"></div>
+    <div class="section-title" style="margin-bottom: 0;">Wow Factor <span class="count">se der tempo</span></div>
+
+    <!-- F7: Alertas Inteligentes -->
+    <div class="feature" onclick="this.classList.toggle('open')">
+      <div class="feature-header">
+        <div class="feature-header-left">
+          <div class="feature-icon" style="background: rgba(139,92,246,0.15)">&#128276;</div>
+          <div>
+            <div class="feature-name">Alertas Inteligentes</div>
+            <div class="feature-oneliner">Claude filtra ruido, so notifica quando urgencia + valor justificam</div>
+          </div>
+        </div>
+        <div class="feature-badges">
+          <span class="badge wow">Wow</span>
+          <span class="badge owner">CO</span>
+          <span class="expand-icon">&#9660;</span>
+        </div>
+      </div>
+      <div class="feature-body">
+        <div class="feature-section">
+          <h4>O que precisa ter</h4>
+          <div class="checklist">
+            <div class="check-item"><span class="dot"></span>Notificacao no topo do dashboard quando algo relevante acontece</div>
+            <div class="check-item"><span class="dot"></span>Exemplos: "5 aprovacoes pendentes ha mais de 3 dias", "Gasto do Comercial 40% acima do limite"</div>
+            <div class="check-item"><span class="dot"></span>Nao alerta tudo — so o que tem impacto real</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F8: Relatorio PDF -->
+    <div class="feature" onclick="this.classList.toggle('open')">
+      <div class="feature-header">
+        <div class="feature-header-left">
+          <div class="feature-icon" style="background: rgba(239,68,68,0.1)">&#128196;</div>
+          <div>
+            <div class="feature-name">Relatorio Executivo</div>
+            <div class="feature-oneliner">PDF mensal gerado pela IA</div>
+          </div>
+        </div>
+        <div class="feature-badges">
+          <span class="badge cut">Cortar se apertar</span>
+          <span class="expand-icon">&#9660;</span>
+        </div>
+      </div>
+      <div class="feature-body">
+        <div class="feature-section">
+          <h4>Por que cortar primeiro</h4>
+          <div class="checklist">
+            <div class="check-item"><span class="dot" style="background:var(--danger)"></span>Complexidade alta, impacto invisivel na demo ao vivo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F9: Benchmark -->
+    <div class="feature" onclick="this.classList.toggle('open')">
+      <div class="feature-header">
+        <div class="feature-header-left">
+          <div class="feature-icon" style="background: rgba(239,68,68,0.1)">&#128200;</div>
+          <div>
+            <div class="feature-name">Benchmark entre Empresas</div>
+            <div class="feature-oneliner">"Empresas do seu porte gastam R$ 180 a menos"</div>
+          </div>
+        </div>
+        <div class="feature-badges">
+          <span class="badge cut">Cortar se apertar</span>
+          <span class="expand-icon">&#9660;</span>
+        </div>
+      </div>
+      <div class="feature-body">
+        <div class="feature-section">
+          <h4>Por que cortar primeiro</h4>
+          <div class="checklist">
+            <div class="check-item"><span class="dot" style="background:var(--danger)"></span>Depende de dados de outros clientes — dificil ter dados reais no hackathon</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CONTRATO ENTRE OS 3 -->
+<div class="contract-section">
+  <div class="section-title">Contrato entre os 3 — combinar nos primeiros 30 minutos</div>
+  <div class="contract-grid">
+    <div class="contract-card">
+      <h3>&#128279; Como os dados fluem</h3>
+      <div class="data-contract">BigQuery (dados reais)
+  &#8595;
+Dev Mobile cria endpoints (JSON)
+  &#8595;
+Coleta injeta no prompt do Claude
+  &#8595;
+Claude devolve JSON estruturado
+  &#8595;
+Suporte monta a tela no Lovable</div>
+    </div>
+    <div class="contract-card">
+      <h3>&#128221; Regra de ouro</h3>
+      <div class="checklist" style="margin-top: 8px;">
+        <div class="check-item"><span class="dot"></span>Claude recebe pergunta + contexto pre-processado</div>
+        <div class="check-item"><span class="dot"></span>Devolve JSON, nunca HTML</div>
+        <div class="check-item"><span class="dot"></span>Frontend interpreta e renderiza</div>
+        <div class="check-item"><span class="dot"></span>Dados estaticos carregam SEM Claude (performance)</div>
+        <div class="check-item"><span class="dot"></span>Claude so e chamado quando o gestor pergunta algo novo</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TIMELINE -->
+<div class="timeline">
+  <div class="section-title">Timeline simplificada</div>
+  <div class="timeline-bar">
+    <div class="timeline-phase" style="background: rgba(0,158,251,0.15)">
+      <div class="time">0h → 1h30</div>
+      <div class="phase-name">Setup</div>
+      <div class="phase-desc">Conectar dados, layout base, primeiro prompt</div>
+    </div>
+    <div class="timeline-phase" style="background: rgba(0,158,251,0.25)">
+      <div class="time">1h30 → 3h30</div>
+      <div class="phase-name">Core</div>
+      <div class="phase-desc">Funcionalidades 1-4 funcionando</div>
+    </div>
+    <div class="timeline-phase" style="background: rgba(139,92,246,0.2)">
+      <div class="time">3h30 → 5h</div>
+      <div class="phase-name">Expansao</div>
+      <div class="phase-desc">Simulador + score + polish</div>
+    </div>
+    <div class="timeline-phase" style="background: rgba(16,185,129,0.15)">
+      <div class="time">5h → 6h</div>
+      <div class="phase-name">Demo</div>
+      <div class="phase-desc">Testar fluxo, roteiro, fallback mock</div>
+    </div>
+  </div>
+</div>
+
+<!-- FASE 1 DETALHADA -->
+<div class="section" style="border-top: 1px solid var(--border);">
+  <div class="section-title">Fase 1 detalhada — Setup (0h a 1h30) <span class="count">O que cada um faz</span></div>
+
+  <!-- DEV MOBILE -->
+  <div class="feature open" onclick="this.classList.toggle('open')">
+    <div class="feature-header">
+      <div class="feature-header-left">
+        <div class="feature-icon" style="background: rgba(0,158,251,0.2)">
+          <div class="mini-avatar" style="background:var(--primary); width:32px; height:32px; font-size:14px;">DM</div>
+        </div>
+        <div>
+          <div class="feature-name">Dev Mobile — Dados + BigQuery</div>
+          <div class="feature-oneliner">Conectar, explorar, montar 3 queries e empacotar como endpoint</div>
+        </div>
+      </div>
+      <div class="feature-badges">
+        <span class="badge" style="background:rgba(0,158,251,0.15); color:var(--primary)">0h→1h30</span>
+        <span class="expand-icon">&#9660;</span>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="feature-section">
+        <h4>Min 0→15 — Acesso e reconhecimento</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Acessar BigQuery console (projeto: dw-onfly-prd)</div>
+          <div class="check-item"><span class="dot"></span>Rodar INFORMATION_SCHEMA pra listar tabelas disponiveis</div>
+          <div class="check-item"><span class="dot"></span>Identificar tabelas de: reservas/viagens, aprovacoes, politica, viajantes e centros de custo</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Mapa mental das tabelas e como se relacionam</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>Min 15→30 — Combinar contrato com o time</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Reuniao rapida com o time (15 min maximo)</div>
+          <div class="check-item"><span class="dot"></span>Olhar os JSONs sugeridos no board e confirmar: "consigo montar essa query? os campos existem?"</div>
+          <div class="check-item"><span class="dot"></span>Se algum campo nao existir, avisar AGORA — o time ajusta o escopo</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> "Sim, consigo" ou "preciso adaptar X"</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>Min 30→50 — Query 1: Infracoes por centro de custo</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>A query MAIS importante — alimenta grafico de barras + resposta principal do chat</div>
+          <div class="check-item"><span class="dot"></span>Retornar: centro_custo, total_infracoes, custo_excedente, tipo mais frequente</div>
+          <div class="check-item"><span class="dot"></span>Filtrar ultimos 30 dias, onde valor > limite da politica</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Query rodando com dados reais</div>
+        </div>
+        <div class="data-contract" style="margin-top:8px">SELECT centro_custo, COUNT(*) as total,
+  SUM(valor_excedente) as custo_excedente
+FROM tabela_reservas
+WHERE valor > limite_politica
+  AND data >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+GROUP BY centro_custo ORDER BY total DESC</div>
+      </div>
+      <div class="feature-section">
+        <h4>Min 50→65 — Query 2: Tempo de aprovacao por gestor</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Alimenta Mapa de Aprovadores + alerta de aprovacoes lentas</div>
+          <div class="check-item"><span class="dot"></span>Retornar: aprovador, tempo_medio_dias, pendentes, custo_atraso</div>
+          <div class="check-item"><span class="dot"></span>Calcular diferenca entre data_pedido e data_aprovacao</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Query rodando com dados reais</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>Min 65→80 — Query 3: Base do simulador</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>A query que faz o "uau" funcionar — dado um limite X, quantas reservas ficam acima?</div>
+          <div class="check-item"><span class="dot"></span>Parametrizavel: recebe limite, retorna reservas_impactadas e economia_potencial</div>
+          <div class="check-item"><span class="dot"></span>Testar com valores 300, 400, 500, 600 pra validar que faz sentido</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Query parametrizavel funcionando</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>Min 80→90 — Empacotar como endpoint</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Opcao rapida: Supabase Edge Function que roda query e devolve JSON</div>
+          <div class="check-item"><span class="dot"></span>Opcao mais rapida: exportar resultados como JSON estatico</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Pelo menos 1 endpoint OU 3 JSONs exportados</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4 style="color: var(--danger)">NAO fazer nessa fase</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot" style="background:var(--danger)"></span>Nao otimizar query (nao precisa de index, precisa funcionar)</div>
+          <div class="check-item"><span class="dot" style="background:var(--danger)"></span>Nao criar autenticacao no endpoint</div>
+          <div class="check-item"><span class="dot" style="background:var(--danger)"></span>Nao ficar preso se uma query nao retornar dado — avisa o time e segue pra proxima</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUPORTE INTERNO -->
+  <div class="feature open" onclick="this.classList.toggle('open')">
+    <div class="feature-header">
+      <div class="feature-header-left">
+        <div class="feature-icon" style="background: rgba(236,72,153,0.2)">
+          <div class="mini-avatar" style="background:var(--pink); width:32px; height:32px; font-size:14px;">SI</div>
+        </div>
+        <div>
+          <div class="feature-name">Suporte Interno — Frontend no Lovable</div>
+          <div class="feature-oneliner">Montar a casca visual inteira com dados placeholder</div>
+        </div>
+      </div>
+      <div class="feature-badges">
+        <span class="badge" style="background:rgba(236,72,153,0.15); color:var(--pink)">0h→1h30</span>
+        <span class="expand-icon">&#9660;</span>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="feature-section">
+        <h4>Min 0→15 — Preparacao</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Abrir Lovable, criar projeto novo</div>
+          <div class="check-item"><span class="dot"></span>Definir cor primaria #009EFB, fundo escuro</div>
+          <div class="check-item"><span class="dot"></span>Abrir o pie-mockup.html no browser como referencia visual (pode mandar screenshot pro Lovable como inspiracao)</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Projeto criado com tema aplicado</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>Min 15→45 — Layout principal</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Montar estrutura de 2 paineis: chat a esquerda (40%), dashboard a direita (60%)</div>
+          <div class="check-item"><span class="dot"></span>No chat: campo de input embaixo + 4 chips de atalho em cima (textos fixos)</div>
+          <div class="check-item"><span class="dot"></span>No dashboard: 3 cards vazios em cima (infracoes, tempo aprovacao, score aderencia)</div>
+          <div class="check-item"><span class="dot"></span>Textos placeholder: "47", "2.3 dias", "72%"</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Tela com layout dividido, navegavel, bonita</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>Min 45→70 — Componentes do dashboard</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Grafico de barras de infracoes por centro de custo (5 barras com dados fixos)</div>
+          <div class="check-item"><span class="dot"></span>Tabela de ranking (4-5 nomes ficticios com score)</div>
+          <div class="check-item"><span class="dot"></span>Card de sugestao de auto-aprovacao (texto fixo + botao "Criar Regra")</div>
+          <div class="check-item"><span class="dot" style="background:var(--warning)"></span><strong>Dica:</strong> Copiar textos exatos do pie-mockup.html — ja estao na linguagem do gestor</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Dashboard visualmente completo com dados fake</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>Min 70→90 — Simulador de politica</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Slider com label "Limite diaria de hotel: R$ 400"</div>
+          <div class="check-item"><span class="dot"></span>3 cards abaixo: "Reservas impactadas", "Economia estimada", "Infracoes evitadas"</div>
+          <div class="check-item"><span class="dot"></span>Valores fixos por enquanto — logica dinamica vem depois com Coleta</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Simulador visual pronto, esperando integracao</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4 style="color: var(--danger)">NAO fazer nessa fase</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot" style="background:var(--danger)"></span>Nao perder tempo com login/autenticacao</div>
+          <div class="check-item"><span class="dot" style="background:var(--danger)"></span>Nao se preocupar com responsividade mobile</div>
+          <div class="check-item"><span class="dot" style="background:var(--danger)"></span>Nao tentar conectar com API ainda — tudo placeholder</div>
+          <div class="check-item"><span class="dot" style="background:var(--danger)"></span>Nao inventar texto — usar o que ja tem no mockup</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLETA -->
+  <div class="feature open" onclick="this.classList.toggle('open')">
+    <div class="feature-header">
+      <div class="feature-header-left">
+        <div class="feature-icon" style="background: rgba(139,92,246,0.2)">
+          <div class="mini-avatar" style="background:var(--purple); width:32px; height:32px; font-size:14px;">CO</div>
+        </div>
+        <div>
+          <div class="feature-name">Coleta — IA + System Prompt + Cola</div>
+          <div class="feature-oneliner">Preparar a inteligencia e garantir que as partes se encaixam</div>
+        </div>
+      </div>
+      <div class="feature-badges">
+        <span class="badge" style="background:rgba(139,92,246,0.15); color:var(--purple)">0h→1h30</span>
+        <span class="expand-icon">&#9660;</span>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="feature-section">
+        <h4>Min 0→15 — Explorar dados no BigQuery</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Abrir BigQuery (dw-onfly-prd) junto com o Dev Mobile</div>
+          <div class="check-item"><span class="dot"></span>Queries exploratorias: quais tabelas tem reservas? Onde ficam aprovacoes? Existe campo de politica/limite?</div>
+          <div class="check-item"><span class="dot"></span>Anotar nomes reais das colunas — voce vai precisar pra montar o prompt</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Lista de tabelas e campos relevantes</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>Min 15→30 — Combinar contrato JSON com o time</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Puxar a reuniao rapida (voce lidera, 15 min)</div>
+          <div class="check-item"><span class="dot"></span>Mostrar o board — cada funcionalidade ja tem o formato JSON sugerido</div>
+          <div class="check-item"><span class="dot"></span>Confirmar ou ajustar baseado no que viu no BigQuery</div>
+          <div class="check-item"><span class="dot"></span>Definir: "endpoint X devolve esse JSON, frontend consome assim"</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Contrato combinado entre os 3</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>Min 30→60 — Escrever system prompt do Claude</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Abrir playground da Anthropic (console.anthropic.com)</div>
+          <div class="check-item"><span class="dot"></span>1. Quem e o Claude — assistente analitico da Onfly</div>
+          <div class="check-item"><span class="dot"></span>2. Tom — direto, sem rodeios, sem "otima pergunta!", fala pra gestor</div>
+          <div class="check-item"><span class="dot"></span>3. O que pode/nao pode — so dados da empresa, nunca inventa</div>
+          <div class="check-item"><span class="dot"></span>4. Thresholds — aprovacao > 2 dias = critico, infracoes > 10/mes = alerta</div>
+          <div class="check-item"><span class="dot"></span>5. Formato de saida — JSON com resposta + dados + acao + parametros</div>
+          <div class="check-item"><span class="dot"></span>6. Contexto injetado — placeholder pros dados do BigQuery</div>
+          <div class="check-item"><span class="dot"></span>Testar com perguntas: "quantas infracoes?", "quem aprova devagar?"</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> System prompt testado e funcionando no playground</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>Min 60→75 — Testar os 4 cenarios dos chips</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>No playground, simular cada chip com dados fake injetados:</div>
+          <div class="check-item"><span class="dot"></span>1. "Infracoes este mes" → resposta com tabela de CCs</div>
+          <div class="check-item"><span class="dot"></span>2. "Aprovacoes lentas" → ranking de aprovadores</div>
+          <div class="check-item"><span class="dot"></span>3. "Simular politica" → projecao de impacto</div>
+          <div class="check-item"><span class="dot"></span>4. "Ranking aderencia" → scores dos viajantes</div>
+          <div class="check-item"><span class="dot"></span>Ajustar prompt ate as respostas sairem curtas, com dados, no JSON certo</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> 4 respostas de referencia salvas</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>Min 75→90 — Preparar fallback</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Salvar as 4 respostas boas como JSON estatico</div>
+          <div class="check-item"><span class="dot"></span>Se Claude travar na demo, frontend usa esses JSONs como mock</div>
+          <div class="check-item"><span class="dot"></span>Compartilhar com Suporte pra ela ja ir conectando os dados nos componentes</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> 4 JSONs de fallback prontos + suporte sabe o formato</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHECKPOINT -->
+  <div style="background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(0,158,251,0.05)); border: 1px solid var(--success); border-radius: 12px; padding: 20px; margin-top: 16px;">
+    <div style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--success);">&#9989; Checkpoint — 1h30: O que cada um entrega</div>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+      <div style="background: rgba(15,23,42,0.6); border-radius: 10px; padding: 14px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <div class="mini-avatar" style="background:var(--primary); width:24px; height:24px; font-size:11px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:700;">DM</div>
+          <strong style="font-size:13px;">Dev Mobile</strong>
+        </div>
+        <div style="font-size:13px; color:var(--muted);">BigQuery conectado + 3 queries rodando + pelo menos 1 endpoint ou JSONs exportados</div>
+      </div>
+      <div style="background: rgba(15,23,42,0.6); border-radius: 10px; padding: 14px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <div class="mini-avatar" style="background:var(--pink); width:24px; height:24px; font-size:11px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:700;">SI</div>
+          <strong style="font-size:13px;">Suporte</strong>
+        </div>
+        <div style="font-size:13px; color:var(--muted);">Tela completa no Lovable com layout chat + dashboard + simulador, tudo com dados fake</div>
+      </div>
+      <div style="background: rgba(15,23,42,0.6); border-radius: 10px; padding: 14px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <div class="mini-avatar" style="background:var(--purple); width:24px; height:24px; font-size:11px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:700;">CO</div>
+          <strong style="font-size:13px;">Coleta</strong>
+        </div>
+        <div style="font-size:13px; color:var(--muted);">System prompt testado + 4 JSONs de referencia + contrato combinado entre os 3</div>
+      </div>
+    </div>
+    <div style="margin-top: 12px; font-size: 13px; color: var(--muted); text-align: center;">
+      A partir daqui: Dev entrega endpoint → Coleta injeta no prompt → Suporte pluga na tela
+    </div>
+  </div>
+
+</div>
+
+<!-- FASE 2 DETALHADA -->
+<div class="section" style="border-top: 1px solid var(--border);">
+  <div class="section-title">Fase 2 detalhada — Core (1h30 a 3h30) <span class="count">Conectar as partes</span></div>
+
+  <!-- DEV MOBILE FASE 2 -->
+  <div class="feature" onclick="this.classList.toggle('open')">
+    <div class="feature-header">
+      <div class="feature-header-left">
+        <div class="feature-icon" style="background: rgba(0,158,251,0.2)">
+          <div class="mini-avatar" style="background:var(--primary); width:32px; height:32px; font-size:14px;">DM</div>
+        </div>
+        <div>
+          <div class="feature-name">Dev Mobile — 4 Endpoints</div>
+          <div class="feature-oneliner">Transformar as queries em endpoints que devolvem JSON</div>
+        </div>
+      </div>
+      <div class="feature-badges">
+        <span class="badge" style="background:rgba(0,158,251,0.15); color:var(--primary)">1h30→3h30</span>
+        <span class="expand-icon">&#9660;</span>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="feature-section">
+        <h4>1h30→2h00 — Endpoint /api/infracoes</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Criar Edge Function ou endpoint que roda Query 1 (infracoes por CC)</div>
+          <div class="check-item"><span class="dot"></span>Recebe: company_id. Retorna: JSON do contrato (array de cc + total + custo_excedente)</div>
+          <div class="check-item"><span class="dot"></span>Lembrar: cost_center vem do JOIN com users, nao do hotel_orders direto</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> GET /api/infracoes?company_id=X retornando JSON</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>2h00→2h30 — Endpoint /api/aprovacoes</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Roda Query 2 (tempo de aprovacao por aprovador)</div>
+          <div class="check-item"><span class="dot"></span>Retorna: nome, tempo_medio_horas, pendentes, custo_atraso</div>
+          <div class="check-item"><span class="dot"></span>Cuidado: approval_date e previus_date sao timestamps — calcular diferenca em horas</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> GET /api/aprovacoes?company_id=X retornando JSON</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>2h30→3h00 — Endpoint /api/simulador</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Roda Query 3 PARAMETRIZADA — recebe limite, retorna distribuicao</div>
+          <div class="check-item"><span class="dot"></span>Retorna: reservas dentro/fora do limite, economia estimada</div>
+          <div class="check-item"><span class="dot"></span>Esse endpoint e o que faz o slider funcionar na demo ao vivo</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> GET /api/simulador?company_id=X&amp;limite=500 retornando JSON</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>3h00→3h30 — Endpoint /api/aderencia + teste geral</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Roda Query 4 (score por viajante)</div>
+          <div class="check-item"><span class="dot"></span>Testar os 4 endpoints juntos — garantir que todos retornam JSON valido</div>
+          <div class="check-item"><span class="dot"></span>Avisar o Coleta quando cada endpoint estiver pronto (ele troca o fallback pelo real)</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> 4 endpoints funcionando e testados</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4 style="color: var(--danger)">Se travar</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot" style="background:var(--danger)"></span>Exportar resultado das queries como JSON estatico e avisar o Coleta. O frontend nao para.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUPORTE FASE 2 -->
+  <div class="feature" onclick="this.classList.toggle('open')">
+    <div class="feature-header">
+      <div class="feature-header-left">
+        <div class="feature-icon" style="background: rgba(236,72,153,0.2)">
+          <div class="mini-avatar" style="background:var(--pink); width:32px; height:32px; font-size:14px;">SI</div>
+        </div>
+        <div>
+          <div class="feature-name">Suporte Interno — Conectar dados reais</div>
+          <div class="feature-oneliner">Trocar placeholder por dados reais, fazer chat e simulador funcionarem</div>
+        </div>
+      </div>
+      <div class="feature-badges">
+        <span class="badge" style="background:rgba(236,72,153,0.15); color:var(--pink)">1h30→3h30</span>
+        <span class="expand-icon">&#9660;</span>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="feature-section">
+        <h4>1h30→2h00 — Cards de metricas com dados reais</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Trocar os placeholders dos 3 cards por dados dos JSONs de fallback (public/data/fallback-*.json)</div>
+          <div class="check-item"><span class="dot"></span>Card infracoes: valor do fallback-infracoes.json → dados[0].valor</div>
+          <div class="check-item"><span class="dot"></span>Card aprovacao: valor do fallback-aprovacoes.json</div>
+          <div class="check-item"><span class="dot"></span>Card aderencia: valor do fallback-ranking.json</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> 3 cards com dados reais (vindos do fallback)</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>2h00→2h30 — Grafico de barras dinamico</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Grafico de infracoes por CC — consumir JSON (fallback ou endpoint quando disponivel)</div>
+          <div class="check-item"><span class="dot"></span>Cores: danger pra CC > 10, warning pra 5-10, success pra < 5</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Grafico funcionando com dados</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>2h30→3h00 — Chat com respostas visuais</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Clicar num chip → mostrar resposta formatada (texto "resposta" + tabela "dados")</div>
+          <div class="check-item"><span class="dot"></span>Cada item do array "dados" vira uma linha: label | valor | cor baseada no "tipo"</div>
+          <div class="check-item"><span class="dot"></span>Comecar com fallback JSON fixo, trocar por Claude quando Coleta integrar</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Chat mostrando respostas formatadas ao clicar nos chips</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>3h00→3h30 — Simulador funcional</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Slider muda valor → atualiza 3 cards de resultado (reservas, economia, infracoes)</div>
+          <div class="check-item"><span class="dot"></span>Opcao A: chamar endpoint /api/simulador a cada mudanca</div>
+          <div class="check-item"><span class="dot"></span>Opcao B: calcular localmente a partir da distribuicao de diarias (mais rapido pra demo)</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Slider mexe → numeros mudam em tempo real</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4 style="color: var(--danger)">Se travar</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot" style="background:var(--danger)"></span>Usar os JSONs de fallback pra tudo. Nao esperar endpoint do dev pra avancar.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLETA FASE 2 -->
+  <div class="feature" onclick="this.classList.toggle('open')">
+    <div class="feature-header">
+      <div class="feature-header-left">
+        <div class="feature-icon" style="background: rgba(139,92,246,0.2)">
+          <div class="mini-avatar" style="background:var(--purple); width:32px; height:32px; font-size:14px;">CO</div>
+        </div>
+        <div>
+          <div class="feature-name">Coleta — Integracao Claude API + Cola</div>
+          <div class="feature-oneliner">Fazer a IA funcionar de verdade e conectar tudo ponta a ponta</div>
+        </div>
+      </div>
+      <div class="feature-badges">
+        <span class="badge" style="background:rgba(139,92,246,0.15); color:var(--purple)">1h30→3h30</span>
+        <span class="expand-icon">&#9660;</span>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="feature-section">
+        <h4>1h30→2h00 — Integrar Claude API</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Criar function que chama Claude API: system prompt v2 (docs/system-prompt-pie.md) + mensagem do usuario</div>
+          <div class="check-item"><span class="dot"></span>Usar model claude-sonnet-4-6 (rapido e barato pro hackathon)</div>
+          <div class="check-item"><span class="dot"></span>Parsear resposta como JSON. Se falhar parse, usar fallback.</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Function chamaClaude(pergunta, contexto) → JSON</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>2h00→2h30 — Montador de contexto</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Function que chama os 4 endpoints do dev e monta o JSON {CONTEXTO_DADOS}</div>
+          <div class="check-item"><span class="dot"></span>Se endpoint nao estiver pronto, usar fallback JSON pra aquela secao</div>
+          <div class="check-item"><span class="dot"></span>Injetar o contexto montado no system prompt antes de chamar Claude</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Contexto montado automaticamente a partir dos endpoints</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>2h30→3h00 — Teste ponta a ponta</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Fluxo completo: chip clicado → monta contexto → chama Claude → JSON volta → frontend renderiza</div>
+          <div class="check-item"><span class="dot"></span>Testar os 4 cenarios: infracoes, aprovacoes, simulador, ranking</div>
+          <div class="check-item"><span class="dot"></span>Ajustar prompt se Claude estiver respondendo fora do formato</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Fluxo E2E funcionando com pelo menos 2 cenarios</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4>3h00→3h30 — Conectar com Suporte + debug</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot"></span>Garantir que o JSON do Claude encaixa nos componentes do Lovable</div>
+          <div class="check-item"><span class="dot"></span>Ajustar labels/valores se necessario (Suporte diz o que quebra na tela)</div>
+          <div class="check-item"><span class="dot"></span>Testar input livre do chat (alem dos chips)</div>
+          <div class="check-item"><span class="dot" style="background:var(--success)"></span><strong>Entregavel:</strong> Chat + dashboard integrados e funcionando</div>
+        </div>
+      </div>
+      <div class="feature-section">
+        <h4 style="color: var(--danger)">Se travar</h4>
+        <div class="checklist">
+          <div class="check-item"><span class="dot" style="background:var(--danger)"></span>Fallback JSON ja esta pronto. Se Claude API nao responder, frontend usa os 4 JSONs estaticos. Demo nao para.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHECKPOINT FASE 2 -->
+  <div style="background: linear-gradient(135deg, rgba(0,158,251,0.1), rgba(139,92,246,0.05)); border: 1px solid var(--primary); border-radius: 12px; padding: 20px; margin-top: 16px;">
+    <div style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--primary);">&#9989; Checkpoint — 3h30: O que deve estar funcionando</div>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+      <div style="background: rgba(15,23,42,0.6); border-radius: 10px; padding: 14px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <div class="mini-avatar" style="background:var(--primary); width:24px; height:24px; font-size:11px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:700;">DM</div>
+          <strong style="font-size:13px;">Dev Mobile</strong>
+        </div>
+        <div style="font-size:13px; color:var(--muted);">4 endpoints retornando JSON real do BigQuery</div>
+      </div>
+      <div style="background: rgba(15,23,42,0.6); border-radius: 10px; padding: 14px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <div class="mini-avatar" style="background:var(--pink); width:24px; height:24px; font-size:11px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:700;">SI</div>
+          <strong style="font-size:13px;">Suporte</strong>
+        </div>
+        <div style="font-size:13px; color:var(--muted);">Dashboard com dados reais + chat renderizando respostas + simulador funcional</div>
+      </div>
+      <div style="background: rgba(15,23,42,0.6); border-radius: 10px; padding: 14px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <div class="mini-avatar" style="background:var(--purple); width:24px; height:24px; font-size:11px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:700;">CO</div>
+          <strong style="font-size:13px;">Coleta</strong>
+        </div>
+        <div style="font-size:13px; color:var(--muted);">Claude API integrada + fluxo E2E (chip → IA → tela) funcionando</div>
+      </div>
+    </div>
+    <div style="margin-top: 12px; font-size: 13px; color: var(--muted); text-align: center;">
+      A partir daqui: polir, expandir simulador, preparar roteiro da demo
+    </div>
+  </div>
+
+  <!-- FALLBACK RULE -->
+  <div style="background: var(--card); border: 1px solid var(--warning); border-radius: 12px; padding: 16px 20px; margin-top: 16px; font-size: 13px;">
+    <strong style="color: var(--warning);">&#128165; Regra de ouro da Fase 2: ninguem espera ninguem</strong>
+    <div style="color: var(--muted); margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+      <div>Dev travou no endpoint? → Exporta JSON estatico</div>
+      <div>Claude API lenta? → Usa fallback JSON</div>
+      <div>Lovable bugou? → Ajusta com dados fake</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- REGRAS -->
+<div class="rules">
+  <div class="section-title">Regras do time</div>
+  <div class="rules-grid">
+    <div class="rule-card do">
+      <h3>&#10003; Fazer</h3>
+      <ul class="rule-list">
+        <li>Combinar formato JSON antes de codar</li>
+        <li>Commitar frequente, branch por pessoa</li>
+        <li>Se travou > 15 min, pede ajuda</li>
+        <li>Mock data como fallback se BigQuery travar</li>
+        <li>Testar a demo com 30 min de antecedencia</li>
+      </ul>
+    </div>
+    <div class="rule-card dont">
+      <h3>&#10007; Nao fazer</h3>
+      <ul class="rule-list">
+        <li>Nao perder tempo com CSS perfeito — Lovable resolve</li>
+        <li>Nao ficar preso em autenticacao — demo usa usuario fixo</li>
+        <li>Nao tentar tudo — core funcionando > muita feature quebrada</li>
+        <li>Nao mexer no mesmo arquivo ao mesmo tempo</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
+<!-- deployed -->

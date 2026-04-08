@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>PIE — Teste chamaClaude</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #0F172A; color: #E2E8F0; padding: 32px; }
+  h1 { color: #009EFB; margin-bottom: 8px; font-size: 1.4rem; }
+  p.sub { color: #64748B; font-size: 0.85rem; margin-bottom: 24px; }
+
+  .config { background: #1E293B; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+  .config label { display: block; font-size: 0.8rem; color: #94A3B8; margin-bottom: 6px; }
+  .config input { width: 100%; background: #0F172A; border: 1px solid #334155; border-radius: 8px;
+    color: #E2E8F0; padding: 10px 14px; font-size: 0.9rem; outline: none; }
+  .config input:focus { border-color: #009EFB; }
+
+  .chips { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .chip { background: #1E293B; border: 1px solid #334155; border-radius: 20px; padding: 8px 16px;
+    font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+  .chip:hover { border-color: #009EFB; color: #009EFB; }
+
+  .input-row { display: flex; gap: 10px; margin-bottom: 24px; }
+  .input-row input { flex: 1; background: #1E293B; border: 1px solid #334155; border-radius: 8px;
+    color: #E2E8F0; padding: 12px 16px; font-size: 0.9rem; outline: none; }
+  .input-row input:focus { border-color: #009EFB; }
+  .btn { background: #009EFB; color: white; border: none; border-radius: 8px; padding: 12px 20px;
+    font-size: 0.9rem; cursor: pointer; white-space: nowrap; font-weight: 600; }
+  .btn:hover { background: #0284C7; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .result { background: #1E293B; border-radius: 12px; padding: 20px; display: none; }
+  .result.show { display: block; }
+
+  .resposta { font-size: 1rem; line-height: 1.6; margin-bottom: 16px; color: #F1F5F9; }
+
+  .dados-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .dado-card { background: #0F172A; border-radius: 8px; padding: 14px; border-left: 3px solid #334155; }
+  .dado-card.danger { border-color: #EF4444; }
+  .dado-card.warning { border-color: #F59E0B; }
+  .dado-card.success { border-color: #22C55E; }
+  .dado-card.info { border-color: #009EFB; }
+  .dado-label { font-size: 0.75rem; color: #64748B; margin-bottom: 4px; }
+  .dado-valor { font-size: 1.1rem; font-weight: 700; }
+  .dado-card.danger .dado-valor { color: #EF4444; }
+  .dado-card.warning .dado-valor { color: #F59E0B; }
+  .dado-card.success .dado-valor { color: #22C55E; }
+  .dado-card.info .dado-valor { color: #009EFB; }
+
+  .acao-badge { display: inline-block; background: #1E40AF22; border: 1px solid #3B82F6;
+    color: #93C5FD; border-radius: 6px; padding: 4px 12px; font-size: 0.8rem; }
+
+  .raw { margin-top: 16px; }
+  .raw summary { font-size: 0.8rem; color: #475569; cursor: pointer; }
+  .raw pre { margin-top: 8px; background: #0F172A; border-radius: 8px; padding: 12px;
+    font-size: 0.75rem; color: #94A3B8; overflow-x: auto; white-space: pre-wrap; }
+
+  .status { font-size: 0.8rem; color: #64748B; margin-bottom: 12px; }
+  .status.fallback { color: #F59E0B; }
+  .status.live { color: #22C55E; }
+  .status.error { color: #EF4444; }
+
+  .spinner { display: none; width: 20px; height: 20px; border: 2px solid #334155;
+    border-top-color: #009EFB; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  .spinner.show { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<h1>PIE — Teste chamaClaude</h1>
+<p class="sub">Valida a função chamaClaude(pergunta, contexto) → JSON. Sem API key usa fallback.</p>
+
+<div class="config">
+  <label>Anthropic API Key (opcional — sem ela usa fallback estático)</label>
+  <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off">
+</div>
+
+<div class="chips">
+  <span class="chip" onclick="perguntar('Quais foram as infrações de política este mês?')">Infrações este mês</span>
+  <span class="chip" onclick="perguntar('Como estão as aprovações? Tem algum aprovador lento?')">Aprovações lentas</span>
+  <span class="chip" onclick="perguntar('Simula o impacto de aumentar o limite de hotel para R$ 500')">Simular política</span>
+  <span class="chip" onclick="perguntar('Qual o ranking de aderência dos viajantes?')">Ranking viajantes</span>
+</div>
+
+<div class="input-row">
+  <input type="text" id="pergunta" placeholder="Faça uma pergunta para o PIE..." onkeydown="if(event.key==='Enter') enviar()">
+  <button class="btn" onclick="enviar()" id="btnEnviar">Perguntar</button>
+  <div class="spinner" id="spinner"></div>
+</div>
+
+<div class="result" id="result">
+  <div class="status" id="status"></div>
+  <div class="resposta" id="resposta"></div>
+  <div class="dados-grid" id="dados"></div>
+  <div id="acaoWrap"></div>
+  <details class="raw">
+    <summary>JSON bruto</summary>
+    <pre id="raw"></pre>
+  </details>
+</div>
+
+<script src="js/chamaClaude.js"></script>
+<script>
+// Contexto fake — simula o que o backend montaria do BigQuery
+const CONTEXTO_FAKE = {
+  empresa: "Empresa Demo",
+  periodo: "ultimos 30 dias",
+  data_extracao: new Date().toISOString().split('T')[0],
+  resumo_infracoes: {
+    total: 47,
+    variacao_mes_anterior_pct: 18,
+    por_centro_custo: [
+      { cc: "Comercial", total: 12, custo_excedente: 8400 },
+      { cc: "Engenharia", total: 9, custo_excedente: 5200 },
+      { cc: "Marketing", total: 8, custo_excedente: 3800 }
+    ],
+    por_tipo: [
+      { tipo: "Hotel acima do limite", total: 28 },
+      { tipo: "Antecedencia < 3 dias", total: 11 },
+      { tipo: "Classe errada (aereo)", total: 8 }
+    ]
+  },
+  aprovacoes: {
+    tempo_medio_horas: 5.2,
+    por_aprovador: [
+      { nome: "Ricardo Almeida", tempo_medio_horas: 14.5, pendentes: 23, custo_atraso: 4200 },
+      { nome: "Fernanda Costa", tempo_medio_horas: 9.8, pendentes: 8, custo_atraso: 2100 },
+      { nome: "Bruno Oliveira", tempo_medio_horas: 1.4, pendentes: 2, custo_atraso: 0 }
+    ]
+  },
+  score_aderencia: {
+    media_empresa_pct: 72,
+    por_viajante: [
+      { nome: "Lucia Ferreira", score: 96, viagens: 14, infracoes: 0 },
+      { nome: "Marcos Lima", score: 91, viagens: 8, infracoes: 1 },
+      { nome: "Beatriz Santos", score: 74, viagens: 11, infracoes: 3 },
+      { nome: "Carlos Silva", score: 42, viagens: 12, infracoes: 8 }
+    ]
+  },
+  simulador_base: {
+    limite_atual_hotel: 350,
+    total_reservas_90d: 4668,
+    distribuicao_diarias: [
+      { faixa: "ate_200", qtd: 526, media: 123 },
+      { faixa: "200_300", qtd: 2313, media: 257 },
+      { faixa: "300_400", qtd: 1823, media: 343 },
+      { faixa: "400_500", qtd: 1059, media: 453 },
+      { faixa: "500_700", qtd: 1727, media: 598 }
+    ]
+  }
+};
+
+function perguntar(texto) {
+  document.getElementById('pergunta').value = texto;
+  enviar();
+}
+
+async function enviar() {
+  const pergunta = document.getElementById('pergunta').value.trim();
+  if (!pergunta) return;
+
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const btn = document.getElementById('btnEnviar');
+  const spinner = document.getElementById('spinner');
+  const result = document.getElementById('result');
+
+  btn.disabled = true;
+  spinner.classList.add('show');
+  result.classList.remove('show');
+
+  const inicio = Date.now();
+  const respJSON = await chamaClaude(pergunta, CONTEXTO_FAKE, apiKey || null);
+  const ms = Date.now() - inicio;
+
+  renderizar(respJSON, apiKey ? 'live' : 'fallback', ms);
+
+  btn.disabled = false;
+  spinner.classList.remove('show');
+}
+
+function renderizar(json, modo, ms) {
+  const result = document.getElementById('result');
+  const status = document.getElementById('status');
+  const resposta = document.getElementById('resposta');
+  const dados = document.getElementById('dados');
+  const acaoWrap = document.getElementById('acaoWrap');
+  const raw = document.getElementById('raw');
+
+  status.className = 'status ' + modo;
+  status.textContent = modo === 'live'
+    ? `✓ Resposta ao vivo do Claude (${ms}ms)`
+    : `⚠ Fallback estático (sem API key ou parse falhou)`;
+
+  resposta.textContent = json.resposta;
+
+  dados.innerHTML = (json.dados || []).map(d => `
+    <div class="dado-card ${d.tipo}">
+      <div class="dado-label">${d.label}</div>
+      <div class="dado-valor">${d.valor}</div>
+    </div>
+  `).join('');
+
+  acaoWrap.innerHTML = json.acao
+    ? `<span class="acao-badge">→ acao: ${json.acao}</span>`
+    : '';
+
+  raw.textContent = JSON.stringify(json, null, 2);
+  result.classList.add('show');
+}
+</script>
+</body>
+</html>

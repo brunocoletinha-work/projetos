@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PIE — Mapa de Tabelas BigQuery</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #009EFB;
+      --bg: #0F172A;
+      --card: #1E293B;
+      --border: #334155;
+      --text: #F1F5F9;
+      --muted: #94A3B8;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --purple: #8B5CF6;
+    }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 32px 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+    h1 span { color: var(--primary); }
+    .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+    .alert {
+      background: rgba(245,158,11,0.1);
+      border: 1px solid var(--warning);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+    .alert strong { color: var(--warning); }
+    .alert ul { margin-top: 8px; padding-left: 20px; }
+    .alert li { color: var(--muted); margin-bottom: 4px; }
+
+    /* DIAGRAM */
+    .diagram {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .diagram h2 { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 20px; }
+    .diagram-flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+    .diagram-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 600;
+    }
+    .diagram-box.main { border-color: var(--primary); color: var(--primary); }
+    .diagram-box.join { border-color: var(--purple); color: var(--purple); font-size: 11px; }
+    .diagram-arrow { color: var(--muted); font-size: 18px; }
+
+    /* TABLE CARD */
+    .table-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .table-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    .table-header:hover { background: rgba(0,158,251,0.03); }
+    .table-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .table-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .table-name {
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+    }
+    .table-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .table-meta {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .meta-badge {
+      font-size: 11px;
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .meta-badge.rows { background: rgba(0,158,251,0.1); color: var(--primary); }
+    .meta-badge.view { background: rgba(139,92,246,0.1); color: var(--purple); }
+    .meta-badge.proj { background: rgba(51,65,85,0.5); color: var(--muted); }
+    .expand-icon { color: var(--muted); font-size: 16px; transition: transform 0.2s; }
+    .table-card.open .expand-icon { transform: rotate(180deg); }
+
+    .table-body {
+      display: none;
+      padding: 0 20px 20px;
+      border-top: 1px solid var(--border);
+    }
+    .table-card.open .table-body { display: block; }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 12px;
+    }
+    .field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: rgba(15,23,42,0.4);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .field.key { border-left: 3px solid var(--primary); }
+    .field.important { border-left: 3px solid var(--warning); }
+    .field.problem { border-left: 3px solid var(--danger); }
+    .field-name {
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .field-type {
+      font-size: 10px;
+      color: var(--muted);
+      background: rgba(51,65,85,0.5);
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .field-note {
+      font-size: 11px;
+      color: var(--muted);
+      grid-column: 1 / -1;
+      padding: 4px 10px;
+      font-style: italic;
+    }
+
+    .section-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-top: 16px;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .usage {
+      background: rgba(0,158,251,0.06);
+      border: 1px solid rgba(0,158,251,0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--primary);
+    }
+
+    /* JOIN SECTION */
+    .join-section {
+      background: var(--card);
+      border: 2px solid var(--purple);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .join-section h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--purple);
+      margin-bottom: 16px;
+    }
+    .join-code {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 12px;
+      line-height: 1.8;
+      color: var(--text);
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .join-code .comment { color: var(--muted); }
+    .join-code .keyword { color: var(--primary); }
+    .join-code .table { color: var(--warning); }
+    .join-code .field { color: var(--success); background: none; border: none; padding: 0; }
+
+    /* STATUS */
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .status-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+    .status-card .icon { font-size: 24px; margin-bottom: 6px; }
+    .status-card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .status-card .value { font-size: 18px; font-weight: 700; margin-top: 2px; }
+    .status-card.ok .value { color: var(--success); }
+    .status-card.warn .value { color: var(--warning); }
+    .status-card.err .value { color: var(--danger); }
+
+    @media (max-width: 768px) {
+      body { padding: 20px; }
+      .field-grid { grid-template-columns: 1fr; }
+      .status-grid { grid-template-columns: 1fr 1fr; }
+      .diagram-flow { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<h1><span>Policy</span> Intelligence Engine — Mapa de Dados</h1>
+<p class="subtitle">Tabelas BigQuery relevantes pro hackathon. Exploradas em 2026-04-08.</p>
+
+<!-- STATUS -->
+<div class="status-grid">
+  <div class="status-card ok">
+    <div class="icon">&#128451;</div>
+    <div class="label">Reservas Hotel</div>
+    <div class="value">1.7M rows</div>
+  </div>
+  <div class="status-card ok">
+    <div class="icon">&#9992;</div>
+    <div class="label">Reservas Aereo</div>
+    <div class="value">2.2M rows</div>
+  </div>
+  <div class="status-card ok">
+    <div class="icon">&#9989;</div>
+    <div class="label">Aprovacoes</div>
+    <div class="value">446K rows</div>
+  </div>
+  <div class="status-card warn">
+    <div class="icon">&#128220;</div>
+    <div class="label">Politicas</div>
+    <div class="value">2.7K rows</div>
+  </div>
+</div>
+
+<!-- ALERTAS -->
+<div class="alert">
+  <strong>&#9888; 3 descobertas importantes pra nao perder tempo</strong>
+  <ul>
+    <li><strong>cost_center_name esta NULL em 100% dos hotel_orders.</strong> Pra agrupar por CC, cruzar hotel_orders.user_id → users.id → users.cost_center</li>
+    <li><strong>into_travel_policy nao significa "dentro do limite".</strong> 99.98% e 1. Significa "empresa tem politica ativa". Pra saber se infringiu, comparar hotel_fare com o limite do JSON metadata da travel_policy.</li>
+    <li><strong>Limites de politica estao em centavos no JSON.</strong> 18000 = R$ 180, 30000 = R$ 300. Campo metadata da travel_policy.</li>
+  </ul>
+</div>
+
+<!-- DIAGRAMA DE RELACIONAMENTO -->
+<div class="diagram">
+  <h2>Como as tabelas se conectam</h2>
+  <div class="diagram-flow">
+    <div class="diagram-box main">hotel_orders</div>
+    <div class="diagram-arrow">→</div>
+    <div class="diagram-box join">user_id = id</div>
+    <div class="diagram-arrow">→</div>
+    <div class="diagram-box main">users</div>
+    <div class="diagram-arrow">→</div>
+    <div class="diagram-box">cost_center</div>
+  </div>
+  <br>
+  <div class="diagram-flow">
+    <div class="diagram-box main">hotel_orders</div>
+    <div class="diagram-arrow">→</div>
+    <div class="diagram-box join">protocol</div>
+    <div class="diagram-arrow">→</div>
+    <div class="diagram-box main">all_approvers_travel_bi</div>
+    <div class="diagram-arrow">→</div>
+    <div class="diagram-box">tempo aprovacao</div>
+  </div>
+  <br>
+  <div class="diagram-flow">
+    <div class="diagram-box main">hotel_orders</div>
+    <div class="diagram-arrow">→</div>
+    <div class="diagram-box join">company_id</div>
+    <div class="diagram-arrow">→</div>
+    <div class="diagram-box main">travel_policy</div>
+    <div class="diagram-arrow">→</div>
+    <div class="diagram-box">limite diaria (JSON)</div>
+  </div>
+</div>
+
+<!-- TABELA 1: hotel_orders -->
+<div class="table-card open" onclick="this.classList.toggle('open')">
+  <div class="table-header">
+    <div class="table-header-left">
+      <div class="table-icon" style="background:rgba(0,158,251,0.15)">&#128451;</div>
+      <div>
+        <div class="table-name">v3_gold.hotel_orders</div>
+        <div class="table-desc">Reservas de hotel — tabela principal do hackathon</div>
+      </div>
+    </div>
+    <div class="table-meta">
+      <span class="meta-badge rows">1.7M rows</span>
+      <span class="meta-badge proj">dw-onfly-dev</span>
+      <span class="expand-icon">&#9660;</span>
+    </div>
+  </div>
+  <div class="table-body">
+    <div class="section-label">Campos-chave (usar nas queries)</div>
+    <div class="field-grid">
+      <div class="field key"><span class="field-name">protocol</span><span class="field-type">STRING</span></div>
+      <div class="field key"><span class="field-name">company_id</span><span class="field-type">STRING</span></div>
+      <div class="field key"><span class="field-name">user_id</span><span class="field-type">STRING</span></div>
+      <div class="field key"><span class="field-name">status</span><span class="field-type">STRING</span></div>
+      <div class="field important"><span class="field-name">hotel_fare</span><span class="field-type">FLOAT</span></div>
+      <div class="field"><span class="field-name">hotel_reference_fare</span><span class="field-type">FLOAT</span></div>
+      <div class="field"><span class="field-name">total_amount</span><span class="field-type">FLOAT</span></div>
+      <div class="field important"><span class="field-name">into_travel_policy</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name">check_in / check_out</span><span class="field-type">DATE</span></div>
+      <div class="field"><span class="field-name">num_nights</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name">hotel_city</span><span class="field-type">STRING</span></div>
+      <div class="field"><span class="field-name">stars</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name">days_in_advance</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name">is_automatic</span><span class="field-type">INT</span></div>
+      <div class="field key"><span class="field-name">purchase_date</span><span class="field-type">TIMESTAMP</span></div>
+      <div class="field"><span class="field-name">emission_date</span><span class="field-type">TIMESTAMP</span></div>
+      <div class="field problem"><span class="field-name">cost_center_name</span><span class="field-type">STRING</span></div>
+      <div class="field-note">&#9888; cost_center_name esta NULL em todos os registros. Usar JOIN com users pra pegar CC.</div>
+    </div>
+    <div class="section-label">Valores do campo status</div>
+    <div class="field-grid">
+      <div class="field"><span class="field-name">Emitted</span> <span style="color:var(--success);font-size:12px">713K (79%)</span></div>
+      <div class="field"><span class="field-name">Cancelled</span> <span style="color:var(--muted);font-size:12px">130K (14%)</span></div>
+      <div class="field"><span class="field-name">Reproved</span> <span style="color:var(--danger);font-size:12px">22K (2.5%)</span></div>
+      <div class="field"><span class="field-name">PendingApproval</span> <span style="color:var(--warning);font-size:12px">793</span></div>
+    </div>
+    <div class="usage">Usar pra: infracoes (hotel_fare vs limite), simulador (distribuicao de diarias), score aderencia (por user_id)</div>
+  </div>
+</div>
+
+<!-- TABELA 2: flight_orders -->
+<div class="table-card" onclick="this.classList.toggle('open')">
+  <div class="table-header">
+    <div class="table-header-left">
+      <div class="table-icon" style="background:rgba(0,158,251,0.15)">&#9992;</div>
+      <div>
+        <div class="table-name">v3_gold.flight_orders</div>
+        <div class="table-desc">Reservas de aereo — estrutura similar a hotel_orders</div>
+      </div>
+    </div>
+    <div class="table-meta">
+      <span class="meta-badge rows">2.2M rows</span>
+      <span class="meta-badge proj">dw-onfly-dev</span>
+      <span class="expand-icon">&#9660;</span>
+    </div>
+  </div>
+  <div class="table-body">
+    <div class="section-label">Campos-chave</div>
+    <div class="field-grid">
+      <div class="field key"><span class="field-name">protocol</span><span class="field-type">STRING</span></div>
+      <div class="field key"><span class="field-name">company_id</span><span class="field-type">STRING</span></div>
+      <div class="field key"><span class="field-name">user_id</span><span class="field-type">STRING</span></div>
+      <div class="field key"><span class="field-name">status</span><span class="field-type">STRING</span></div>
+      <div class="field important"><span class="field-name">total_amount</span><span class="field-type">FLOAT</span></div>
+      <div class="field"><span class="field-name">origin_destination</span><span class="field-type">STRING</span></div>
+      <div class="field"><span class="field-name">airline</span><span class="field-type">STRING</span></div>
+      <div class="field"><span class="field-name">travel_date</span><span class="field-type">DATE</span></div>
+      <div class="field"><span class="field-name">days_in_advance</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name">is_international</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name">cost_center_name</span><span class="field-type">STRING</span></div>
+      <div class="field"><span class="field-name">busines_class</span><span class="field-type">STRING</span></div>
+      <div class="field key"><span class="field-name">purchase_date</span><span class="field-type">TIMESTAMP</span></div>
+      <div class="field"><span class="field-name">emission_date</span><span class="field-type">TIMESTAMP</span></div>
+    </div>
+    <div class="usage">Usar pra: complementar score aderencia, infracoes de aereo (classe errada, antecedencia), volume por rota</div>
+  </div>
+</div>
+
+<!-- TABELA 3: all_approvers_travel_bi -->
+<div class="table-card" onclick="this.classList.toggle('open')">
+  <div class="table-header">
+    <div class="table-header-left">
+      <div class="table-icon" style="background:rgba(16,185,129,0.15)">&#9989;</div>
+      <div>
+        <div class="table-name">views_onfly.all_approvers_travel_bi</div>
+        <div class="table-desc">Historico de aprovacoes — quem aprovou, quando, quanto demorou</div>
+      </div>
+    </div>
+    <div class="table-meta">
+      <span class="meta-badge view">VIEW</span>
+      <span class="meta-badge proj">dw-onfly-dev</span>
+      <span class="expand-icon">&#9660;</span>
+    </div>
+  </div>
+  <div class="table-body">
+    <div class="section-label">Campos-chave</div>
+    <div class="field-grid">
+      <div class="field key"><span class="field-name">action</span> <span style="font-size:11px;color:var(--muted)">Approve / Reprove</span></div>
+      <div class="field key"><span class="field-name">approver_name</span><span class="field-type">STRING</span></div>
+      <div class="field key"><span class="field-name">approver_id</span><span class="field-type">STRING</span></div>
+      <div class="field key"><span class="field-name">protocol</span><span class="field-type">STRING</span></div>
+      <div class="field"><span class="field-name">type</span> <span style="font-size:11px;color:var(--muted)">hotel_order / fly_order</span></div>
+      <div class="field key"><span class="field-name">company_id</span><span class="field-type">STRING</span></div>
+      <div class="field important"><span class="field-name">approval_date</span><span class="field-type">TIMESTAMP</span></div>
+      <div class="field important"><span class="field-name">previus_date</span><span class="field-type">TIMESTAMP</span></div>
+      <div class="field"><span class="field-name">approval_step</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name">is_finished</span> <span style="font-size:11px;color:var(--muted)">1 = workflow completo</span></div>
+      <div class="field-note">&#9201; Tempo de aprovacao = UNIX_SECONDS(approval_date) - UNIX_SECONDS(previus_date), converter pra dias dividindo por 86400</div>
+    </div>
+    <div class="usage">Usar pra: mapa de aprovadores (tempo medio por pessoa), custo do atraso, padrao de auto-aprovacao</div>
+  </div>
+</div>
+
+<!-- TABELA 4: travel_policy -->
+<div class="table-card" onclick="this.classList.toggle('open')">
+  <div class="table-header">
+    <div class="table-header-left">
+      <div class="table-icon" style="background:rgba(245,158,11,0.15)">&#128220;</div>
+      <div>
+        <div class="table-name">views_onfly.travel_policy</div>
+        <div class="table-desc">Politicas de viagem por empresa — limites e regras no campo metadata (JSON)</div>
+      </div>
+    </div>
+    <div class="table-meta">
+      <span class="meta-badge rows">2.7K rows</span>
+      <span class="meta-badge proj">dw-onfly-dev</span>
+      <span class="expand-icon">&#9660;</span>
+    </div>
+  </div>
+  <div class="table-body">
+    <div class="section-label">Campos</div>
+    <div class="field-grid">
+      <div class="field key"><span class="field-name">company_id</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name">name</span><span class="field-type">STRING</span></div>
+      <div class="field"><span class="field-name">type</span> <span style="font-size:11px;color:var(--muted)">travel</span></div>
+      <div class="field"><span class="field-name">status</span> <span style="font-size:11px;color:var(--muted)">1 = ativa</span></div>
+      <div class="field important"><span class="field-name">metadata</span><span class="field-type">STRING (JSON)</span></div>
+    </div>
+    <div class="section-label">Estrutura do metadata (exemplo real)</div>
+    <div class="join-code">{
+  <span class="comment">// Hotel: precisa aprovar, limite de R$ 250/diaria</span>
+  "<span class="field">hotel_order</span>": {
+    "have_to_approve": true,
+    "config": [{
+      "type": "value",
+      "action": "signal",
+      "bought_type": "daily_amount",
+      "limit": 25000,  <span class="comment">// ← em CENTAVOS! 25000 = R$ 250</span>
+      "category": "greater"
+    }]
+  },
+  <span class="comment">// Aereo: precisa aprovar, antecedencia minima 7 dias</span>
+  "<span class="field">fly_order</span>": {
+    "have_to_approve": true,
+    "config": [{
+      "type": "date",
+      "limit": 7,
+      "category": "less"  <span class="comment">// sinaliza se comprou com menos de 7 dias</span>
+    }]
+  }
+}</div>
+    <div class="usage">Usar pra: extrair limite de hotel por empresa → comparar com hotel_fare → calcular infracoes reais</div>
+  </div>
+</div>
+
+<!-- TABELA 5: users -->
+<div class="table-card" onclick="this.classList.toggle('open')">
+  <div class="table-header">
+    <div class="table-header-left">
+      <div class="table-icon" style="background:rgba(139,92,246,0.15)">&#128100;</div>
+      <div>
+        <div class="table-name">views_onfly.users</div>
+        <div class="table-desc">Usuarios — nome, email, centro de custo, permissao. Resolve o NULL do cost_center_name.</div>
+      </div>
+    </div>
+    <div class="table-meta">
+      <span class="meta-badge rows">780K rows</span>
+      <span class="meta-badge proj">dw-onfly-dev</span>
+      <span class="expand-icon">&#9660;</span>
+    </div>
+  </div>
+  <div class="table-body">
+    <div class="section-label">Campos-chave</div>
+    <div class="field-grid">
+      <div class="field key"><span class="field-name">id</span><span class="field-type">INT</span></div>
+      <div class="field"><span class="field-name">name</span><span class="field-type">STRING</span></div>
+      <div class="field"><span class="field-name">email</span><span class="field-type">STRING</span></div>
+      <div class="field key"><span class="field-name">company_id</span><span class="field-type">INT</span></div>
+      <div class="field important"><span class="field-name">cost_center</span> <span style="font-size:11px;color:var(--success)">nome do CC!</span></div>
+      <div class="field"><span class="field-name">cost_center_id</span><span class="field-type">FLOAT</span></div>
+      <div class="field"><span class="field-name">type</span><span class="field-type">STRING</span></div>
+      <div class="field"><span class="field-name">designation</span><span class="field-type">STRING</span></div>
+      <div class="field"><span class="field-name">permission</span><span class="field-type">STRING</span></div>
+      <div class="field"><span class="field-name">active</span><span class="field-type">INT</span></div>
+    </div>
+    <div class="usage">JOIN com hotel_orders via user_id = id pra resolver centro de custo e nome do viajante</div>
+  </div>
+</div>
+
+<!-- COMO CRUZAR -->
+<div class="join-section">
+  <h2>&#128279; Como cruzar as tabelas — query de referencia</h2>
+  <div class="join-code"><span class="comment">-- Query base: reservas de hotel com CC, nome do viajante e limite da politica</span>
+<span class="keyword">SELECT</span>
+  h.protocol,
+  u.name <span class="keyword">AS</span> viajante,
+  u.cost_center <span class="keyword">AS</span> centro_custo,
+  h.hotel_city,
+  h.hotel_fare,
+  h.num_nights,
+  h.status,
+  h.days_in_advance,
+  h.purchase_date,
+  <span class="comment">-- Extrair limite de hotel do JSON da politica (em centavos → dividir por 100)</span>
+  <span class="keyword">SAFE_CAST</span>(<span class="keyword">JSON_EXTRACT_SCALAR</span>(
+    <span class="keyword">JSON_EXTRACT</span>(tp.metadata, <span class="table">'$.hotel_order.config[0]'</span>), <span class="table">'$.limit'</span>
+  ) <span class="keyword">AS</span> FLOAT64) / 100 <span class="keyword">AS</span> limite_politica,
+  <span class="comment">-- Marcar se infringiu</span>
+  <span class="keyword">CASE WHEN</span> h.hotel_fare > <span class="keyword">SAFE_CAST</span>(<span class="keyword">JSON_EXTRACT_SCALAR</span>(
+    <span class="keyword">JSON_EXTRACT</span>(tp.metadata, <span class="table">'$.hotel_order.config[0]'</span>), <span class="table">'$.limit'</span>
+  ) <span class="keyword">AS</span> FLOAT64) / 100 <span class="keyword">THEN</span> 1 <span class="keyword">ELSE</span> 0 <span class="keyword">END AS</span> infringiu
+<span class="keyword">FROM</span> <span class="table">`dw-onfly-dev.v3_gold.hotel_orders`</span> h
+<span class="keyword">LEFT JOIN</span> <span class="table">`dw-onfly-dev.views_onfly.users`</span> u
+  <span class="keyword">ON SAFE_CAST</span>(h.user_id <span class="keyword">AS</span> INT64) = u.id
+<span class="keyword">LEFT JOIN</span> <span class="table">`dw-onfly-dev.views_onfly.travel_policy`</span> tp
+  <span class="keyword">ON SAFE_CAST</span>(h.company_id <span class="keyword">AS</span> INT64) = tp.company_id
+  <span class="keyword">AND</span> tp.status = 1
+<span class="keyword">WHERE</span> h.purchase_date >= <span class="keyword">TIMESTAMP_SUB</span>(<span class="keyword">CURRENT_TIMESTAMP</span>(), <span class="keyword">INTERVAL</span> 30 <span class="keyword">DAY</span>)
+  <span class="keyword">AND</span> h.status = <span class="table">'Emitted'</span>
+  <span class="keyword">AND</span> h.company_id = <span class="table">@company_id</span></div>
+</div>
+
+<!-- TABELAS BONUS -->
+<div style="border-top: 2px dashed var(--border); margin: 24px 0;"></div>
+<p style="font-size:13px; color:var(--muted); margin-bottom:16px;">&#128218; <strong>Tabelas auxiliares</strong> — usar se der tempo</p>
+
+<div class="table-card" onclick="this.classList.toggle('open')">
+  <div class="table-header">
+    <div class="table-header-left">
+      <div class="table-icon" style="background:rgba(51,65,85,0.3)">&#128200;</div>
+      <div>
+        <div class="table-name">cockpit.gold_companies_polices_settings</div>
+        <div class="table-desc">Flags de configuracao de politica por empresa (aprovacao por CC, cartao por viajante, etc)</div>
+      </div>
+    </div>
+    <div class="table-meta">
+      <span class="meta-badge rows">10.7K rows</span>
+      <span class="meta-badge proj">dw-onfly-prd</span>
+      <span class="expand-icon">&#9660;</span>
+    </div>
+  </div>
+  <div class="table-body">
+    <div class="field-grid">
+      <div class="field"><span class="field-name">employeesNeedApprovalToBuy</span><span class="field-type">STRING</span></div>
+      <div class="field"><span class="field-name">approvalFluxByCostCenter</span><span class="field-type">STRING</span></div>
+      <div class="field"><span class="field-name">costCenterRequired</span><span class="field-type">STRING</span></div>
+      <div class="field"><span class="field-name">employeesCanCancel</span><span class="field-type">STRING</span></div>
+    </div>
+    <div class="usage">Util pra saber se a empresa exige aprovacao, tem fluxo por CC, etc. Contexto extra pro prompt.</div>
+  </div>
+</div>
+
+<div class="table-card" onclick="this.classList.toggle('open')">
+  <div class="table-header">
+    <div class="table-header-left">
+      <div class="table-icon" style="background:rgba(51,65,85,0.3)">&#127915;</div>
+      <div>
+        <div class="table-name">v3_gold.tickets</div>
+        <div class="table-desc">Tickets unificados (hotel + aereo + bus + auto) — visao transversal</div>
+      </div>
+    </div>
+    <div class="table-meta">
+      <span class="meta-badge rows">5.2M rows</span>
+      <span class="meta-badge proj">dw-onfly-dev</span>
+      <span class="expand-icon">&#9660;</span>
+    </div>
+  </div>
+  <div class="table-body">
+    <div class="field-grid">
+      <div class="field"><span class="field-name">product_type</span> <span style="font-size:11px;color:var(--muted)">flight/hotel/bus/auto</span></div>
+      <div class="field"><span class="field-name">traveler_name</span><span class="field-type">STRING</span></div>
+      <div class="field"><span class="field-name">traveler_email</span><span class="field-type">STRING</span></div>
+      <div class="field"><span class="field-name">total_amount</span><span class="field-type">FLOAT</span></div>
+    </div>
+    <div class="usage">Alternativa pra visao geral de volume — mas pra infracoes, usar hotel_orders e flight_orders que tem mais detalhe.</div>
+  </div>
+</div>
+
+<div style="margin-top: 32px; padding: 16px; text-align: center; color: var(--muted); font-size: 12px; border-top: 1px solid var(--border);">
+  Policy Intelligence Engine — Hackathon Onfly 2026 | Explorado em 2026-04-08
+</div>
+
+</body>
+</html>
