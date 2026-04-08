@@ -10,7 +10,7 @@ export interface BigQueryRow {
 
 export interface BigQueryResult {
   schema: { fields: { name: string; type: string }[] };
-  rows: BigQueryRow[];
+  rows?: BigQueryRow[];
   jobComplete: boolean;
 }
 
@@ -85,6 +85,9 @@ export async function runQuery(
   if (!raw) throw new Error("BIGQUERY_SERVICE_ACCOUNT env var not set");
 
   const serviceAccount = JSON.parse(raw);
+  if (!serviceAccount.client_email || !serviceAccount.private_key) {
+    throw new Error("BIGQUERY_SERVICE_ACCOUNT is missing client_email or private_key");
+  }
   const token = await getAccessToken(serviceAccount);
 
   const projectId = serviceAccount.project_id ?? "dw-onfly-prd";
