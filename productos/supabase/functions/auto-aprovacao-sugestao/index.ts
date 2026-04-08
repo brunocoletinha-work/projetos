@@ -12,19 +12,20 @@ Deno.serve(async (req: Request) => {
 
     const sql = `
       SELECT
-        CAST(a.company_id AS INT64) AS company_id,
+        CAST(h.company_id AS INT64) AS company_id,
         COUNT(*) AS total_reservas,
         COUNTIF(p.within_policy = true) AS dentro_politica,
         ROUND(COUNTIF(p.within_policy = true) / COUNT(*) * 100, 1) AS pct_dentro_politica,
-        ROUND(AVG(TIMESTAMP_DIFF(a.approval_date, a.previus_date, MINUTE)), 0) AS tempo_medio_aprovacao_min
-      FROM \`dw-onfly-prd.management_core.all_approvers_travel_bi\` a
-      JOIN \`dw-onfly-prd.management_core.protocol_trip_summary\` p ON p.protocol = a.protocol
+        ROUND(AVG(TIMESTAMP_DIFF(h.history_created_at, h.previous_date_history_approval, MINUTE)), 0) AS tempo_medio_aprovacao_min
+      FROM \`dw-onfly-prd.management_core.fact_ms_approval_history_travel_bi\` h
+      JOIN \`dw-onfly-prd.management_core.protocol_trip_summary\` p ON p.protocol = h.protocol
       JOIN \`dw-onfly-prd.cockpit.gold_companies_polices_settings\` cfg
-        ON cfg.company_id = CAST(a.company_id AS INT64)
+        ON cfg.company_id = CAST(h.company_id AS INT64)
       WHERE cfg.employeesNeedApprovalToBuy = 'true'
-        AND a.previus_date >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @period_days DAY)
-        AND a.approver_name IS NOT NULL
-      GROUP BY a.company_id
+        AND h.history_created_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @period_days DAY)
+        AND h.approver IS NOT NULL
+        AND h.previous_date_history_approval IS NOT NULL
+      GROUP BY h.company_id
       HAVING pct_dentro_politica >= @min_pct
       ORDER BY pct_dentro_politica DESC
     `;
